@@ -5,6 +5,7 @@
   "dependencies": {
     "@better-auth/expo": "^1.7.1",
     "@expo/ui": "~57.0.13",
+    "@expo/vector-icons": "^15.0.2",
     "@react-native-google-signin/google-signin": "^16.1.4",
     "better-auth": "^1.7.1",
     "expo": "~57.0.16",

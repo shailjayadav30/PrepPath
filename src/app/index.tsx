@@ -1,75 +1,18 @@
-import * as Device from "expo-device";
-import { Platform, StyleSheet, View, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StyleSheet, Text, View } from 'react-native'
+import React from 'react'
 
-import { AnimatedIcon } from "@/components/animated-icon";
-import { HintRow } from "@/components/hint-row";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { WebBadge } from "@/components/web-badge";
-import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
-import { authClient } from "@/lib/auth-client";
-
-// function getDevMenuHint() {
-//   if (Platform.OS === 'web') {
-//     return <ThemedText type="small">use browser devtools</ThemedText>;
-//   }
-//   if (Device.isDevice) {
-//     return (
-//       <ThemedText type="small">
-//         shake device or press <ThemedText type="code">m</ThemedText> in terminal
-//       </ThemedText>
-//     );
-//   }
-//   const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-//   return (
-//     <ThemedText type="small">
-//       press <ThemedText type="code">{shortcut}</ThemedText>
-//     </ThemedText>
-//   );
-// }
-
-export default function HomeScreen() {
-  const { data: session } = authClient.useSession();
+const index = () => {
   return (
     <View>
-      <Text>Welcome, {session?.user.name}</Text>;
+      <Text style={styles.text}>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Velit voluptatibus sed quo, non, voluptates molestias quidem sunt natus dicta commodi perspiciatis provident. Sit voluptas in sunt, placeat rerum obcaecati assumenda debitis eum mollitia vel alias maxime autem. Modi beatae corporis aut quas? Natus cumque esse porro vero excepturi impedit quae repellat saepe itaque officia aliquam tempora quo, labore veritatis modi recusandae nostrum, in blanditiis iure praesentium, ad nisi incidunt? Nostrum dignissimos obcaecati perferendis quaerat laborum! Reprehenderit omnis, exercitationem iste sunt dolor recusandae natus minus deserunt pariatur ipsa! Excepturi consectetur quibusdam dolorum voluptas porro. Quod sapiente vitae vero impedit omnis enim?</Text>
     </View>
-  );
+  )
 }
 
+export default index
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: "center",
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: "center",
-  },
-  code: {
-    textTransform: "uppercase",
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: "stretch",
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});
+  text:{
+    color:"red"
+  }
+})
