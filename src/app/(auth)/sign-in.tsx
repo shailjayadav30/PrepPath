@@ -131,7 +131,7 @@ export default function SignIn() {
         </View>
       </View>
     </SafeAreaView>
-  );
+  );            
 }
 
 const styles = StyleSheet.create({
