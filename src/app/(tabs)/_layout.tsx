@@ -27,7 +27,7 @@ export default function TabseLayout() {
         }}
       />
       <Tabs.Screen
-        name="roadmap"
+        name="createroadmap"
         options={{
           title: "Roadmap",
           headerShown: false,
