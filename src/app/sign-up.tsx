@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -24,11 +25,13 @@ export default function SignUp() {
       name,
     });
     if (error) {
+      Alert.alert("Error in Registering user")
       console.log("Signup error:", error);
       return;
     }
 
     console.log("User:", data);
+    router.replace("/sign-in")
   };
 
   return (

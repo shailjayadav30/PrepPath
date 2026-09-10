@@ -1,18 +1,48 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { Redirect } from "expo-router";
+import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { authClient } from "@/lib/auth-client";
 
+export default function Index() {
+  const { data: session, isPending } = authClient.useSession();
+  const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
 
-const index = () => {
-  return (
-    <View>
-      <Text style={styles.text}>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Velit voluptatibus sed quo, non, voluptates molestias quidem sunt natus dicta commodi perspiciatis provident. Sit voluptas in sunt, placeat rerum obcaecati assumenda debitis eum mollitia vel alias maxime autem. Modi beatae corporis aut quas? Natus cumque esse porro vero excepturi impedit quae repellat saepe itaque officia aliquam tempora quo, labore veritatis modi recusandae nostrum, in blanditiis iure praesentium, ad nisi incidunt? Nostrum dignissimos obcaecati perferendis quaerat laborum! Reprehenderit omnis, exercitationem iste sunt dolor recusandae natus minus deserunt pariatur ipsa! Excepturi consectetur quibusdam dolorum voluptas porro. Quod sapiente vitae vero impedit omnis enim?</Text>
-    </View>
-  )
-}
+  useEffect(() => {
+    AsyncStorage.getItem("hasOnboarded").then((value) => {
+      setHasOnboarded(value === "true");
+    });
+  }, []);
 
-export default index
+  //   const checkAsyncStorage = async () => {
+  //   try {
+  //     const keys = await AsyncStorage.getAllKeys();
+  //     console.log('AsyncStorage Keys:', keys);
 
-const styles = StyleSheet.create({
-  text:{
-    color:"red"
+  //     if (keys.length > 0) {
+  //       const results = await AsyncStorage.multiGet(keys);
+  //       console.log('AsyncStorage Content:', Object.fromEntries(results));
+  //     } else {
+  //       console.log('AsyncStorage is empty.');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error inspecting AsyncStorage:', error);
+  //   }
+  // };
+
+  // useEffect(()=>{
+  // checkAsyncStorage()
+  // },[])
+  if (isPending || hasOnboarded === null) {
+    return null;
   }
-})
+
+  if (!hasOnboarded) {
+    return <Redirect href="/(onboarding)" />;
+  }
+
+  if (!session) {
+    return <Redirect href="/sign-in" />;
+  }
+
+  return <Redirect href="/(tabs)" />;
+}

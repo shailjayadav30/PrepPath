@@ -1,51 +1,48 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 
-export default function Onboarding2() {
-  const finishOnboarding = async () => {
-    try {
-      await AsyncStorage.setItem("hasOnboarded", "true");
-      router.replace("/sign-in");
-    } catch (err) {
-      console.error("Error saving onboarding status:", err);
-    }
-  };
-
+export default function Onboarding1() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        {/* Skip */}
+        <View style={styles.topRow}>
+          <TouchableOpacity onPress={() => router.replace("/(onboarding)/onboarding2")}>
+            <Text style={styles.skipText}>Skip</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Illustration */}
         <View style={styles.illustrationWrapper}>
           <View style={styles.iconCircle}>
-            <Feather name="map" size={48} color="#FFFFFF" />
+            <Feather name="upload-cloud" size={48} color="#FFFFFF" />
           </View>
         </View>
 
         {/* Text */}
         <View style={styles.textBlock}>
-          <Text style={styles.title}>Get Your Roadmap</Text>
+          <Text style={styles.title}>Upload Your Syllabus</Text>
           <Text style={styles.subtitle}>
-            We'll break your syllabus down into units, topics, and subtopics
-            — so you always know exactly what to study next.
+            Just upload a PDF of your syllabus and let Curricula do the heavy
+            lifting — no manual typing needed.
           </Text>
         </View>
 
         {/* Progress dots */}
         <View style={styles.dotsRow}>
-          <View style={styles.dot} />
           <View style={[styles.dot, styles.dotActive]} />
+          <View style={styles.dot} />
         </View>
 
-        {/* Get started button */}
+        {/* Next button */}
         <TouchableOpacity
           style={styles.nextButton}
           activeOpacity={0.85}
-          onPress={finishOnboarding}
+          onPress={() => router.push("/onboarding2")}
         >
-          <Text style={styles.nextButtonText}>Get Started</Text>
+          <Text style={styles.nextButtonText}>Next</Text>
           <Feather name="arrow-right" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
@@ -56,6 +53,8 @@ export default function Onboarding2() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FFFFFF" },
   container: { flex: 1, paddingHorizontal: 24 },
+  topRow: { alignItems: "flex-end", paddingTop: 8 },
+  skipText: { fontSize: 14, fontWeight: "600", color: "#6B7280" },
 
   illustrationWrapper: {
     flex: 1,

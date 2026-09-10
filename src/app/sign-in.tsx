@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, Feather } from "@expo/vector-icons";
@@ -25,11 +26,13 @@ export default function SignIn() {
       password,
     });
     if (error) {
+      Alert.alert("Error in loogging in")
       console.log("Login error:", error);
       return;
     }
 
     console.log("Logged in user:", data);
+    
   };
 
   return (
@@ -128,7 +131,7 @@ export default function SignIn() {
           {/* Sign up */}
           <View style={styles.signUpRow}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => router.push("/(auth)/sign-up")}>
+            <TouchableOpacity onPress={() => router.push("/sign-up")}>
               <Text style={styles.signUpLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
