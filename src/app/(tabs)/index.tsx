@@ -94,12 +94,6 @@ const SECTIONS = [
   },
 ];
 
-// const TABS = [
-//   { id: "roadmap", label: "Roadmap", icon: "map", active: true },
-//   { id: "syllabi", label: "Syllabi", icon: "book-open" },
-//   { id: "analytics", label: "Analytics", icon: "bar-chart-2" },
-//   { id: "settings", label: "Settings", icon: "settings" },
-// ];
 
 const RoadmapItem = ({ item, isLast }) => {
   const isCompleted = item.state === "completed";

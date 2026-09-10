@@ -1,3 +1,4 @@
+import { authClient } from "@/lib/auth-client";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
@@ -6,6 +7,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const GREEN = "#16A673";
 
 const HomeHeader = () => {
+  
+  const { data: session } = authClient.useSession();
+  console.log(session?.user);                                           
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.topBar}>

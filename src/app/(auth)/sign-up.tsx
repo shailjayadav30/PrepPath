@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import SocialSignIn from "@/components/social-sign-in";
 export default function SignUp() {
@@ -18,11 +18,17 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const handleSignup = async () => {
-    await authClient.signUp.email({
+    const { data, error } = await authClient.signUp.email({
       email,
       password,
       name,
     });
+    if (error) {
+      console.log("Signup error:", error);
+      return;
+    }
+
+    console.log("User:", data);
   };
 
   return (
@@ -41,12 +47,33 @@ export default function SignUp() {
 
         {/* Form */}
         <View style={styles.form}>
-          {/* Email */}
+          {/* username */}
+
+              <View style={styles.fieldGroup}>
+            <View style={styles.labelRow}>
+              <View style={styles.labelWithIcon}>
+                <Feather name="lock" size={14} color="#374151" />
+                <Text style={styles.labelText}>UserName</Text>
+              </View>
+             
+            </View>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                placeholder="john"
+                placeholderTextColor="#9CA3AF"
+                value={name}
+                onChangeText={setName}
+                style={styles.input}
+              />
+        
+            </View>
+          </View>
+          {/* email */}
           <View style={styles.fieldGroup}>
             <View style={styles.labelRow}>
               <View style={styles.labelWithIcon}>
                 <Feather name="briefcase" size={14} color="#374151" />
-                <Text style={styles.labelText}>Student Email or Username</Text>
+                <Text style={styles.labelText}>Student Email </Text>
               </View>
             </View>
             <TextInput
@@ -92,7 +119,7 @@ export default function SignUp() {
               </TouchableOpacity>
             </View>
           </View>
-
+  
           {/* Sign In button */}
           <TouchableOpacity
             style={styles.signInButton}
@@ -115,7 +142,7 @@ export default function SignUp() {
             <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
               {/* <Ionicons name="logo-google" size={18} color="#EA4335" />
               <Text style={styles.socialButtonText}>Google</Text> */}
-              <SocialSignIn/>
+              <SocialSignIn />
             </TouchableOpacity>
           </View>
 

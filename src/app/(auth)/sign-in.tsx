@@ -17,13 +17,19 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberDevice, setRememberDevice] = useState(false);
+
   const router = useRouter();
   const handleLogin = async () => {
-    await authClient.signIn.email({
+    const { data, error }=  await authClient.signIn.email({
       email,
       password,
     });
+    if (error) {
+      console.log("Login error:", error);
+      return;
+    }
+
+    console.log("Logged in user:", data);
   };
 
   return (
@@ -111,8 +117,6 @@ export default function SignIn() {
             <View style={styles.dividerLine} />
           </View>
 
-   
-
           {/* Social row */}
           <View style={styles.socialRow}>
             <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
@@ -124,14 +128,14 @@ export default function SignIn() {
           {/* Sign up */}
           <View style={styles.signUpRow}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={()=>router.push("/(auth)/sign-up")}>
+            <TouchableOpacity onPress={() => router.push("/(auth)/sign-up")}>
               <Text style={styles.signUpLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
     </SafeAreaView>
-  );            
+  );
 }
 
 const styles = StyleSheet.create({
