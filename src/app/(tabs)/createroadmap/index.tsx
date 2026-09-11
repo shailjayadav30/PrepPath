@@ -1,3 +1,4 @@
+import { authClient } from "@/lib/auth-client";
 import { Feather } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
@@ -9,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -23,6 +25,7 @@ export default function Roadmap() {
   const [loading, setLoading] = useState(false);
   const [roadmaps, setRoadmaps] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState("");
 
   // Which subject card is expanded, and which unit/topic inside it
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
@@ -32,8 +35,16 @@ export default function Roadmap() {
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>(
     {},
   );
-
+  const trimmedName = name.trim();
+  const canUpload = trimmedName.length > 0 && !loading;
   const pickDocument = async () => {
+    if (!trimmedName) {
+      Alert.alert(
+        "Name required",
+        "Please give this syllabus a name before uploading.",
+      );
+      return;
+    }
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: "application/pdf",
@@ -43,7 +54,7 @@ export default function Roadmap() {
       if (!result.canceled) {
         const selectedAsset = result.assets[0];
         setFileInfo(selectedAsset);
-        generateRoadmap(selectedAsset);
+        generateRoadmap(selectedAsset, trimmedName);
       } else {
         Alert.alert("Canceled", "No document was selected.");
       }
@@ -53,15 +64,24 @@ export default function Roadmap() {
     }
   };
 
-  const uploadWithXHR = (
+  const uploadWithXHR = async (
     file: DocumentPicker.DocumentPickerAsset,
+    syllabusName: string,
   ): Promise<any> => {
+    const cookies = await authClient.getCookie();
+
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
 
       xhr.open("POST", `${BASE_URL}/api/uploadfile`);
+      if (cookies) {
+        xhr.setRequestHeader("Cookie", cookies);
+      }
+      xhr.withCredentials = true;
 
       xhr.onload = () => {
+        console.log("Status:", xhr.status);
+        console.log("Response:", xhr.responseText);
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             resolve(JSON.parse(xhr.responseText));
@@ -76,6 +96,7 @@ export default function Roadmap() {
       xhr.onerror = () => reject(new Error("Network request failed"));
 
       const formData = new FormData();
+      formData.append("name", syllabusName);
       formData.append("pdffile", {
         uri: file.uri,
         name: file.name || "upload.pdf",
@@ -86,7 +107,10 @@ export default function Roadmap() {
     });
   };
 
-  const generateRoadmap = async (file: DocumentPicker.DocumentPickerAsset) => {
+  const generateRoadmap = async (
+    file: DocumentPicker.DocumentPickerAsset,
+    syllabusName: string,
+  ) => {
     setLoading(true);
     setError(null);
 
@@ -95,6 +119,7 @@ export default function Roadmap() {
 
       if (Platform.OS === "web") {
         const formData = new FormData();
+        formData.append("name", syllabusName);
         // @ts-ignore
         if (file.file) {
           // @ts-ignore
@@ -106,12 +131,13 @@ export default function Roadmap() {
         const res = await fetch(`${BASE_URL}/api/uploadfile`, {
           method: "POST",
           body: formData,
+          credentials: "include",
         });
 
         if (!res.ok) throw new Error(`Server responded with ${res.status}`);
         data = await res.json();
       } else {
-        data = await uploadWithXHR(file);
+        data = await uploadWithXHR(file, syllabusName);
       }
 
       if (!data.success) {
@@ -181,26 +207,59 @@ export default function Roadmap() {
           </Text>
         </View>
 
-        {/* Upload Card */}
+        {/* Form card — name + upload grouped together */}
         <View style={styles.form}>
-          <Text style={styles.sectionLabel}>Upload Syllabus (PDF)</Text>
-
-          <TouchableOpacity
-            style={styles.uploadBox}
-            onPress={pickDocument}
-            activeOpacity={0.85}
-            disabled={loading}
-          >
-            <View style={styles.uploadIconWrapper}>
-              <Feather name="upload-cloud" size={22} color="#16A673" />
+          <View style={styles.fieldGroup}>
+            <View style={styles.labelWithIcon}>
+              <Feather name="edit-3" size={14} color="#374151" />
+              <Text style={styles.labelText}>Syllabus Name</Text>
             </View>
-            <Text style={styles.uploadTitle} numberOfLines={1}>
-              {fileInfo ? fileInfo.name : "Tap to upload a PDF"}
-            </Text>
-            <Text style={styles.uploadSubtitle}>
-              {fileInfo ? "Tap to choose a different file" : "PDF files only"}
-            </Text>
-          </TouchableOpacity>
+            <TextInput
+              placeholder="e.g. Semester 3 – DBMS"
+              placeholderTextColor="#9CA3AF"
+              value={name}
+              onChangeText={setName}
+              style={styles.input}
+              editable={!loading}
+            />
+          </View>
+
+          <View style={styles.fieldGroup}>
+            <View style={styles.labelWithIcon}>
+              <Feather name="file-text" size={14} color="#374151" />
+              <Text style={styles.labelText}>Upload Syllabus (PDF)</Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.uploadBox, !canUpload && styles.uploadBoxDisabled]}
+              onPress={pickDocument}
+              activeOpacity={0.85}
+              disabled={loading}
+            >
+              <View
+                style={[
+                  styles.uploadIconWrapper,
+                  !canUpload && styles.uploadIconWrapperDisabled,
+                ]}
+              >
+                <Feather
+                  name="upload-cloud"
+                  size={22}
+                  color={canUpload ? "#16A673" : "#9CA3AF"}
+                />
+              </View>
+              <Text style={styles.uploadTitle} numberOfLines={1}>
+                {fileInfo ? fileInfo.name : "Tap to upload a PDF"}
+              </Text>
+              <Text style={styles.uploadSubtitle}>
+                {!trimmedName
+                  ? "Enter a name above first"
+                  : fileInfo
+                    ? "Tap to choose a different file"
+                    : "PDF files only"}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           {loading && (
             <View style={styles.loadingRow}>
@@ -235,8 +294,6 @@ export default function Roadmap() {
                     style={styles.card}
                     activeOpacity={0.85}
                     onPress={() => toggleCard(item.id)}
-                    // Once you build the detail route, swap toggleCard for:
-                    // onPress={() => router.push({ pathname: `/(tabs)/createroadmap/${item.id}`, params: { subject: JSON.stringify(item.raw) } })}
                   >
                     <View style={styles.cardIconWrapper}>
                       <Feather name="check-square" size={18} color="#16A673" />
@@ -257,7 +314,6 @@ export default function Roadmap() {
                     />
                   </TouchableOpacity>
 
-                  {/* Inline expanded roadmap — temporary, until the [id] detail page exists */}
                   {isExpanded && (
                     <View style={styles.expandedPanel}>
                       {item.raw.units?.map((unit: any, unitIndex: number) => {
@@ -378,6 +434,7 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 22, fontWeight: "700", color: "#111827", marginBottom: 4 },
   subtitle: { fontSize: 14, color: "#6B7280", textAlign: "center" },
+
   form: {
     width: "100%",
     backgroundColor: "#FFFFFF",
@@ -389,12 +446,24 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 10,
+
+  fieldGroup: { marginBottom: 18 },
+  labelWithIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
   },
+  labelText: { fontSize: 13, fontWeight: "600", color: "#374151" },
+  input: {
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: "#F3F4F6",
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: "#111827",
+  },
+
   uploadBox: {
     backgroundColor: "#F3F4F6",
     borderRadius: 14,
@@ -405,6 +474,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  uploadBoxDisabled: {
+    opacity: 0.55,
+  },
   uploadIconWrapper: {
     width: 48,
     height: 48,
@@ -414,6 +486,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 10,
   },
+  uploadIconWrapperDisabled: {
+    backgroundColor: "#EEF0F2",
+  },
   uploadTitle: {
     fontSize: 15,
     fontWeight: "600",
@@ -422,24 +497,27 @@ const styles = StyleSheet.create({
     maxWidth: "90%",
   },
   uploadSubtitle: { fontSize: 12, color: "#9CA3AF" },
+
   loadingRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 16,
+    marginTop: 6,
     gap: 8,
   },
   loadingText: { fontSize: 13, color: "#6B7280", fontWeight: "500" },
+
   errorRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 16,
+    marginTop: 6,
     gap: 8,
     backgroundColor: "#FEF2F2",
     borderRadius: 10,
     padding: 12,
   },
   errorText: { fontSize: 13, color: "#DC2626", flex: 1 },
+
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -490,11 +568,7 @@ const styles = StyleSheet.create({
   cardDescription: { fontSize: 13, color: "#6B7280", marginBottom: 4 },
   cardMeta: { fontSize: 12, fontWeight: "600", color: "#16A673" },
 
-  // Expanded panel (units → topics → subtopics)
-  expandedPanel: {
-    marginTop: 10,
-    gap: 10,
-  },
+  expandedPanel: { marginTop: 10, gap: 10 },
   unitCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 14,

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -18,6 +18,9 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+//   useEffect(() => {
+//   Alert.alert("Debug", `BASE_URL is: ${process.env.EXPO_PUBLIC_BASE_URL}`);
+// }, []);
   const handleSignup = async () => {
     const { data, error } = await authClient.signUp.email({
       email,
@@ -25,13 +28,13 @@ export default function SignUp() {
       name,
     });
     if (error) {
-      Alert.alert("Error in Registering user")
-      console.log("Signup error:", error);
+      console.log("Full signup error object:", JSON.stringify(error, null, 2));
+      Alert.alert("Error in Registering user", JSON.stringify(error));
       return;
     }
 
     console.log("User:", data);
-    router.replace("/sign-in")
+    router.replace("/sign-in");
   };
 
   return (
@@ -52,13 +55,12 @@ export default function SignUp() {
         <View style={styles.form}>
           {/* username */}
 
-              <View style={styles.fieldGroup}>
+          <View style={styles.fieldGroup}>
             <View style={styles.labelRow}>
               <View style={styles.labelWithIcon}>
                 <Feather name="lock" size={14} color="#374151" />
                 <Text style={styles.labelText}>UserName</Text>
               </View>
-             
             </View>
             <View style={styles.inputWrapper}>
               <TextInput
@@ -68,7 +70,6 @@ export default function SignUp() {
                 onChangeText={setName}
                 style={styles.input}
               />
-        
             </View>
           </View>
           {/* email */}
@@ -122,7 +123,7 @@ export default function SignUp() {
               </TouchableOpacity>
             </View>
           </View>
-  
+
           {/* Sign In button */}
           <TouchableOpacity
             style={styles.signInButton}

@@ -59,7 +59,7 @@ import { useColorScheme } from "react-native";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authClient } from "@/lib/auth-client";
-import ErrorBoundary from "@/components/ErrorBoundary";
+// import ErrorBoundary from "@/components/ErrorBoundary";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -91,7 +91,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       {/* <ErrorBoundary> */}
-      {/* <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
 
           <Stack.Protected guard={!hasOnboarded}>
@@ -106,10 +106,10 @@ export default function RootLayout() {
           <Stack.Protected guard={!!hasOnboarded && isLoggedIn}>
             <Stack.Screen name="(tabs)" />
           </Stack.Protected>
-        </Stack> */}
+        </Stack>
       {/* </ErrorBoundary> */}
 
-      <Stack screenOptions={{ headerShown: false }}>
+      {/* <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
 
         <Stack.Screen name="(onboarding)" />
@@ -118,7 +118,7 @@ export default function RootLayout() {
         <Stack.Screen name="sign-up" />
 
         <Stack.Screen name="(tabs)" />
-      </Stack>
+      </Stack> */}
     </ThemeProvider>
   );
 }

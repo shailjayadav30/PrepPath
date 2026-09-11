@@ -7,7 +7,6 @@ export const authClient = createAuthClient({
   plugins: [
     expoClient({
       scheme: "studyfrontend",
-      //  cookiePrefix: "better-auth",
       storagePrefix: "studyfrontend",
       storage: SecureStore,
     }),

@@ -26,7 +26,7 @@ export default function SignIn() {
       password,
     });
     if (error) {
-      Alert.alert("Error in loogging in")
+      Alert.alert("Error in loogging in",`${error.message}`)
       console.log("Login error:", error);
       return;
     }
