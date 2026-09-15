@@ -197,7 +197,7 @@ export default function Roadmap() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
+        {/* <View style={styles.header}>
           <View style={styles.logoBox}>
             <Feather name="map" size={26} color="#FFFFFF" />
           </View>
@@ -205,6 +205,16 @@ export default function Roadmap() {
           <Text style={styles.subtitle}>
             Upload your syllabus, get a step-by-step plan
           </Text>
+        </View> */}
+
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.allBtn}
+            activeOpacity={0.8}
+            onPress={() => router.push("/(tabs)/createroadmap/allRoadmap")}
+          >
+            <Text style={styles.allText}>See All Roadmap</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Form card — name + upload grouped together */}
@@ -422,7 +432,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FFFFFF" },
   container: { flex: 1 },
   scrollContent: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40 },
-  header: { alignItems: "center", marginBottom: 24 },
+  header: { display: "flex", alignItems: "flex-end", marginBottom: 24 },
   logoBox: {
     width: 56,
     height: 56,
@@ -621,4 +631,16 @@ const styles = StyleSheet.create({
     marginTop: 7,
   },
   subTopicText: { flex: 1, fontSize: 12.5, color: "#6B7280", lineHeight: 18 },
+  allBtn: {
+    backgroundColor: "#16A673",
+    height: 40,
+    padding: 10,
+    display: "flex",
+    justifyContent: "center",
+    textAlign: "center",
+    borderRadius: 10,
+  },
+  allText: {
+    color: "#FFFFFF",
+  },
 });

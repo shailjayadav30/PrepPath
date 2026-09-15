@@ -9,9 +9,16 @@ export default function RoadmapLayout() {
         name="[id]"
         options={({ route }) => ({
           headerShown: true,
-          title: `Roadmap: ${route.params?.id ?? "Detail"}`,
+          title: `Roadmap: ${(route.params as { id?: string } | undefined)?.id ?? "Detail"}`,
+        })}
+      />
+
+      <Stack.Screen
+        name="allRoadmap"
+        options={() => ({
+          headerShown: false,
         })}
       />
     </Stack>
-  );                              
+  );
 }
