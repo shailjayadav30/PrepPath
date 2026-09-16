@@ -1,8 +1,14 @@
 import { authClient } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Collapsible } from "@/components/ui/collapsible";
+import { Collapsible } from "@/components/ui/Collapsiblee";
 
 type SubTopic = {
   id: string;
@@ -35,87 +41,123 @@ export default function allRoadmap() {
   const { data: session } = authClient.useSession();
   const userId = session?.user.id;
   const [syllabusList, setSyllabusList] = useState<Syllabus[]>([]);
-  const [expanded, setExpanded] = useState(false);
-  async function showALLRoadmap() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
     if (!userId) return;
-    const cookie = await authClient.getCookie();
-    console.log("cookie:", cookie);
+    let cancelled = false;
+    async function showALLRoadmap() {
+      setLoading(true);
+      setError(null);
+      try {
+        const cookie = await authClient.getCookie();
+        const headers = new Headers();
+        headers.append("Cookie", cookie ?? "");
 
-    const headers = new Headers();
-    headers.append("Cookie", cookie ?? "");
+        const response = await fetch(
+          `${process.env.EXPO_PUBLIC_BASE_URL}/api/syllabus`,
+          {
+            method: "GET",
+            headers,
+          },
+        );
 
-    try {
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_BASE_URL}/api/syllabus`,
-        {
-          method: "GET",
-          headers,
-        },
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error in getting roadmaps: ${errorText}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Error in getting roadmaps: ${errorText}`);
+        }
+        const data = await response.json();
+        // console.log("roadmap", data.syllabus[0].subjects);
+        if (!cancelled) setSyllabusList(data.syllabus ?? []);
+      } catch (error) {
+        console.log("Error", error);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      const data = await response.json();
-      console.log("roadmap", data.syllabus[0].subjects);
-      setSyllabusList(data.syllabus || []);
-    } catch (error) {
-      console.log("Error", error);
     }
+    showALLRoadmap();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, styles.center]}>
+        <ActivityIndicator />
+      </SafeAreaView>
+    );
   }
 
-  useEffect(() => {
-    if (session?.user) {
-      showALLRoadmap();
-    }
-  }, [session]);
+  if (error) {
+    return (
+      <SafeAreaView style={[styles.container, styles.center]}>
+        <Text>{error}</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (syllabusList.length === 0) {
+    return (
+      <SafeAreaView style={[styles.container, styles.center]}>
+        <Text>No roadmap found</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <Collapsible title="roadmap">
+      <ScrollView contentContainerStyle={styles.content}>
         {syllabusList.map((s) => (
-          <TouchableOpacity key={s.id}>
-            <Text>{s.name}</Text>
-            <View>
+          <Collapsible title={s.name} key={s.id}>
+            <View style={styles.indent}>
               {s.subjects.map((sub) => (
-                <View key={sub.id}>
-                  <Text>{sub.name}</Text>
-                  <View>
+                <Collapsible title={sub.name} key={sub.id}>
+                  <View style={styles.indent}>
                     {sub.units.map((unit) => (
-                      <View key={unit.id}>
-                        <Text>{unit.name}</Text>
-                        <View>
+                      <Collapsible title={unit.name} key={unit.id}>
+                        <View style={styles.indent}>
                           {unit.topics.map((topic) => (
-                            <View key={topic.id}>
-                              <Text>{topic.name}</Text>
-                              <View>
+                            <Collapsible title={topic.name} key={topic.id}>
+                              <View style={styles.indent}>
                                 {topic.subTopics.map((subT) => (
-                                  <View key={subT.id}>
-                                    <Text>{subT.name}</Text>
-                                  </View>
+                                  <Text key={subT.id} style={styles.subTopic}>
+                                    . {subT.name}
+                                  </Text>
                                 ))}
                               </View>
-                            </View>
+                            </Collapsible>
                           ))}
-                          x``
                         </View>
-                      </View>
+                      </Collapsible>
                     ))}
                   </View>
-                </View>
+                </Collapsible>
               ))}
             </View>
-          </TouchableOpacity>
+          </Collapsible>
         ))}
-      </Collapsible>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "red",
+    flex: 1,
     padding: 10,
+  },
+  center: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  content: {
+    paddingBottom: 32,
+  },
+  indent: {
+    paddingLeft: 12,
+  },                                                                                                                                                                          
+  subTopic: {
+    paddingVertical: 4,
   },
 });

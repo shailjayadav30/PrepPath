@@ -56,10 +56,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  content: {
-    marginTop: Spacing.three,
-    borderRadius: Spacing.three,
-    marginLeft: Spacing.four,
-    padding: Spacing.four,
-  },
+ content: {
+  marginTop: Spacing.two,
+  marginLeft: Spacing.three,
+  paddingLeft: Spacing.three,
+  borderLeftWidth: 1,
+  borderLeftColor: 'rgba(255,255,255,0.12)',
+},
 });
