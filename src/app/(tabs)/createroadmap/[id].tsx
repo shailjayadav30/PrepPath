@@ -5,7 +5,7 @@ export default function roadmap() {
   const { id } = useLocalSearchParams();
   return (
     <View>
-      <Text>roadmap {id}</Text>
+      <Text>roadmaps {id}</Text>
     </View>
   );
 }
