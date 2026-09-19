@@ -8,7 +8,7 @@ export default function RoadmapLayout() {
       <Stack.Screen
         name="[id]"
         options={({ route }) => ({
-          headerShown: true,
+          headerShown: false,
           title: `Roadmap: ${(route.params as { id?: string } | undefined)?.id ?? "Detail"}`,
         })}
       />
