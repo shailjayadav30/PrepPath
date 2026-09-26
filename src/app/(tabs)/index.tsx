@@ -5,7 +5,6 @@ import {
   View,
   FlatList,
   ScrollView,
-  Image,
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -217,26 +216,7 @@ const Index = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Welcome card */}
-        {/* <View style={styles.welcomeCard}>
-          <View style={styles.welcomeLeft}>
-            <View>
-              <Image
-                source={{ uri: "https://i.pravatar.cc/100?img=47" }}
-                style={styles.welcomeAvatar}
-              />
-              <View style={styles.onlineDot} />
-            </View>
-            <View style={{ marginLeft: 12 }}>
-              <Text style={styles.welcomeLabel}>WELCOME BACK</Text>
-              <Text style={styles.welcomeName}>Alex Chen</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.scanButton} activeOpacity={0.8}>
-            <Feather name="file-text" size={14} color="#0F5132" />
-            <Text style={styles.scanButtonText}>Scan Syllabus</Text>
-          </TouchableOpacity>
-        </View> */}
+       
 
         {/* Active Syllabus */}
         <TouchableOpacity style={styles.syllabusCard} activeOpacity={0.8}>
@@ -332,21 +312,7 @@ const Index = () => {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Bottom tab bar */}
-      {/* <View style={styles.tabBar}>
-        {TABS.map((tab) => (
-          <View key={tab.id} style={styles.tabItem}>
-            <Feather
-              name={tab.icon}
-              size={20}
-              color={tab.active ? "#16A673" : "#9CA3AF"}
-            />
-            <Text style={tab.active ? styles.tabLabelActive : styles.tabLabel}>
-              {tab.label}
-            </Text>
-          </View>
-        ))}
-      </View> */}
+    
     </SafeAreaView>
   );
 };
@@ -371,60 +337,6 @@ const styles = StyleSheet.create({
 
 
 
-
-  // welcomeCard: {
-  //   flexDirection: "row",
-  //   alignItems: "center",
-  //   justifyContent: "space-between",
-  //   marginTop: 12,
-  //   marginBottom: 14,
-  // },
-  // welcomeLeft: {
-  //   flexDirection: "row",
-  //   alignItems: "center",
-  //   flexShrink: 1,
-  // },
-  // welcomeAvatar: {
-  //   width: 48,
-  //   height: 48,
-  //   borderRadius: 24,
-  // },
-  // onlineDot: {
-  //   position: "absolute",
-  //   bottom: 0,
-  //   right: 0,
-  //   width: 12,
-  //   height: 12,
-  //   borderRadius: 6,
-  //   backgroundColor: "#22C55E",
-  //   borderWidth: 2,
-  //   borderColor: "#F5F7FA",
-  // },
-  // welcomeLabel: {
-  //   fontSize: 11,
-  //   fontWeight: "700",
-  //   color: "#9CA3AF",
-  //   letterSpacing: 0.5,
-  // },
-  // welcomeName: {
-  //   fontSize: 20,
-  //   fontWeight: "700",
-  //   color: "#111827",
-  // },
-  // scanButton: {
-  //   flexDirection: "row",
-  //   alignItems: "center",
-  //   gap: 6,
-  //   backgroundColor: "#D8F3E4",
-  //   paddingHorizontal: 14,
-  //   paddingVertical: 10,
-  //   borderRadius: 20,
-  // },
-  // scanButtonText: {
-  //   fontSize: 13,
-  //   fontWeight: "600",
-  //   color: GREEN_DARK,
-  // },
 
   // Active syllabus
   syllabusCard: {
