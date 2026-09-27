@@ -25,7 +25,7 @@ export default function Onboarding1() {
         <View style={styles.textBlock}>
           <Text style={styles.title}>Upload Your Syllabus</Text>
           <Text style={styles.subtitle}>
-            Just upload a PDF of your syllabus and let Curricula do the heavy
+            Just upload a PDF of your syllabus and let Shinro do the heavy
             lifting — no manual typing needed.
           </Text>
         </View>

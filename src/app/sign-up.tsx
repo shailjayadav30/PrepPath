@@ -45,7 +45,7 @@ export default function SignUp() {
           <View style={styles.logoBox}>
             <Feather name="check-square" size={26} color="#FFFFFF" />
           </View>
-          <Text style={styles.title}>Curricula</Text>
+          <Text style={styles.title}>Shinro</Text>
           <Text style={styles.subtitle}>
             Master your syllabus, step by step
           </Text>

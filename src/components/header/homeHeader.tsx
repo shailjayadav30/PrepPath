@@ -7,9 +7,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const GREEN = "#16A673";
 
 const HomeHeader = () => {
-  
   const { data: session } = authClient.useSession();
-  console.log(session?.user);                                           
+  // console.log(session?.user);
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.topBar}>
@@ -17,7 +16,7 @@ const HomeHeader = () => {
           <View style={styles.logoBox}>
             <Feather name="check-square" size={18} color="#FFFFFF" />
           </View>
-          <Text style={styles.brand}>Curricula</Text>
+          <Text style={styles.brand}>Shinro</Text>
         </View>
         <View style={styles.topBarRight}>
           <Feather
