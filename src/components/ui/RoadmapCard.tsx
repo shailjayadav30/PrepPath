@@ -1,19 +1,16 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { Syllabus } from "../../../types/roadmapTypes";
+import { Roadmap } from "../../../types/roadmapTypes";
 import { Ionicons } from "@expo/vector-icons";
-import { getCookie } from "@better-auth/expo/client";
-import { authClient } from "@/lib/auth-client";
 
 type Prop = {
-  syllabus: Syllabus;
+  roadmap: Roadmap;
   onPress: () => void;
   onDelete?: () => void;
 };
 
-export default function RoadmapCard({ syllabus, onPress, onDelete }: Prop) {
+export default function RoadmapCard({ roadmap, onPress, onDelete }: Prop) {
   const progress: number = 68;
-  
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -29,7 +26,7 @@ export default function RoadmapCard({ syllabus, onPress, onDelete }: Prop) {
 
           <View style={styles.titleWrapper}>
             <Text style={styles.text} numberOfLines={2}>
-              {syllabus.name}
+              {roadmap.name}
             </Text>
 
             <Text style={styles.subtitle}>Your learning roadmap</Text>
@@ -38,6 +35,9 @@ export default function RoadmapCard({ syllabus, onPress, onDelete }: Prop) {
 
         <TouchableOpacity onPress={onDelete} hitSlop={10} activeOpacity={0.7}>
           <Ionicons name="trash-outline" size={21} color="#C45B5B" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onDelete} hitSlop={10} activeOpacity={0.7}>
+          <Text>active</Text>
         </TouchableOpacity>
       </View>
 

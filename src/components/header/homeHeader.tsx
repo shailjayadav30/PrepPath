@@ -8,7 +8,7 @@ const GREEN = "#16A673";
 
 const HomeHeader = () => {
   const { data: session } = authClient.useSession();
-  // console.log(session?.user);
+  console.log(session?.user);
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.topBar}>

@@ -35,16 +35,16 @@ export default function Roadmap() {
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>(
     {},
   );
-  const trimmedName = name.trim();
-  const canUpload = trimmedName.length > 0 && !loading;
+  // const trimmedName = name.trim();
+  // const canUpload = trimmedName.length > 0 && !loading;
   const pickDocument = async () => {
-    if (!trimmedName) {
-      Alert.alert(
-        "Name required",
-        "Please give this syllabus a name before uploading.",
-      );
-      return;
-    }
+    // if (!trimmedName) {
+    //   Alert.alert(
+    //     "Name required",
+    //     "Please give this roadmap a name before uploading.",
+    //   );
+    //   return;
+    // }
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: "application/pdf",
@@ -54,7 +54,8 @@ export default function Roadmap() {
       if (!result.canceled) {
         const selectedAsset = result.assets[0];
         setFileInfo(selectedAsset);
-        generateRoadmap(selectedAsset, trimmedName);
+        // generateRoadmap(selectedAsset, trimmedName);
+        generateRoadmap(selectedAsset);
       } else {
         Alert.alert("Canceled", "No document was selected.");
       }
@@ -66,7 +67,7 @@ export default function Roadmap() {
 
   const uploadWithXHR = async (
     file: DocumentPicker.DocumentPickerAsset,
-    syllabusName: string,
+    // roadmapName: string,
   ): Promise<any> => {
     const cookies = await authClient.getCookie();
 
@@ -96,7 +97,7 @@ export default function Roadmap() {
       xhr.onerror = () => reject(new Error("Network request failed"));
 
       const formData = new FormData();
-      formData.append("name", syllabusName);
+      // formData.append("name", roadmapName);
       formData.append("pdffile", {
         uri: file.uri,
         name: file.name || "upload.pdf",
@@ -109,7 +110,7 @@ export default function Roadmap() {
 
   const generateRoadmap = async (
     file: DocumentPicker.DocumentPickerAsset,
-    syllabusName: string,
+    // roadmapName: string,
   ) => {
     setLoading(true);
     setError(null);
@@ -119,7 +120,7 @@ export default function Roadmap() {
 
       if (Platform.OS === "web") {
         const formData = new FormData();
-        formData.append("name", syllabusName);
+        // formData.append("name", roadmapName);
         // @ts-ignore
         if (file.file) {
           // @ts-ignore
@@ -137,31 +138,31 @@ export default function Roadmap() {
         if (!res.ok) throw new Error(`Server responded with ${res.status}`);
         data = await res.json();
       } else {
-        data = await uploadWithXHR(file, syllabusName);
+        // data = await uploadWithXHR(file, roadmapName);
+        data = await uploadWithXHR(file);
       }
 
       if (!data.success) {
         throw new Error("Upload was not successful");
       }
 
-      // Matches SyllabusSchema: { subjects: [{ name, units: [{ name, topics: [{ name, subTopics: [] }] }] }] }
-      const subjects = data.analysis?.subjects || [];
+      // Matches RoadmapSchema: { subjects: [{ name, units: [{ name, topics: [{ name, subTopics: [] }] }] }] }
+      const roadmap = data.roadmap || [];
+      const units = roadmap.units ?? [];
+      const topicCount = units.reduce(
+        (sum: number, units: any) => sum + (units.topics?.length ?? 0),
+        0,
+      );
 
-      const normalized = subjects.map((subject: any, index: number) => {
-        const units = subject.units || [];
-        const topicCount = units.reduce(
-          (sum: number, unit: any) => sum + (unit.topics?.length || 0),
-          0,
-        );
-
-        return {
-          id: String(index),
-          title: subject.name,
+      const normalized = [
+        {
+          id: roadmap.id,
+          title: roadmap.name,
           description: `${units.length} units covering ${topicCount} topics`,
           steps: topicCount,
-          raw: subject,
-        };
-      });
+          raw: roadmap,
+        },
+      ];
 
       setRoadmaps(normalized);
       setExpandedCardId(null);
@@ -196,17 +197,6 @@ export default function Roadmap() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        {/* <View style={styles.header}>
-          <View style={styles.logoBox}>
-            <Feather name="map" size={26} color="#FFFFFF" />
-          </View>
-          <Text style={styles.title}>Your Roadmap</Text>
-          <Text style={styles.subtitle}>
-            Upload your syllabus, get a step-by-step plan
-          </Text>
-        </View> */}
-
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.allBtn}
@@ -222,7 +212,7 @@ export default function Roadmap() {
           <View style={styles.fieldGroup}>
             <View style={styles.labelWithIcon}>
               <Feather name="edit-3" size={14} color="#374151" />
-              <Text style={styles.labelText}>Syllabus Name</Text>
+              <Text style={styles.labelText}>Roadmap Name</Text>
             </View>
             <TextInput
               placeholder="e.g. Semester 3 – DBMS"
@@ -241,7 +231,7 @@ export default function Roadmap() {
             </View>
 
             <TouchableOpacity
-              style={[styles.uploadBox, !canUpload && styles.uploadBoxDisabled]}
+              style={[styles.uploadBox, styles.uploadBoxDisabled]}
               onPress={pickDocument}
               activeOpacity={0.85}
               disabled={loading}
@@ -249,24 +239,23 @@ export default function Roadmap() {
               <View
                 style={[
                   styles.uploadIconWrapper,
-                  !canUpload && styles.uploadIconWrapperDisabled,
+                  styles.uploadIconWrapperDisabled,
                 ]}
               >
                 <Feather
                   name="upload-cloud"
                   size={22}
-                  color={canUpload ? "#16A673" : "#9CA3AF"}
+                  // color={canUpload ? "#16A673" : "#9CA3AF"}
+                  color={"#16A673"}
                 />
               </View>
               <Text style={styles.uploadTitle} numberOfLines={1}>
                 {fileInfo ? fileInfo.name : "Tap to upload a PDF"}
               </Text>
               <Text style={styles.uploadSubtitle}>
-                {!trimmedName
-                  ? "Enter a name above first"
-                  : fileInfo
-                    ? "Tap to choose a different file"
-                    : "PDF files only"}
+                {!fileInfo
+                  ? "Tap to choose a different file"
+                  : "PDF files only"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -389,7 +378,7 @@ export default function Roadmap() {
                                         <View style={styles.subTopicList}>
                                           {topic.subTopics?.map(
                                             (
-                                              subTopic: string,
+                                              subTopic: any,
                                               subIndex: number,
                                             ) => (
                                               <View
@@ -402,7 +391,7 @@ export default function Roadmap() {
                                                 <Text
                                                   style={styles.subTopicText}
                                                 >
-                                                  {subTopic}
+                                                  {subTopic.name}
                                                 </Text>
                                               </View>
                                             ),

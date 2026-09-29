@@ -2,11 +2,11 @@ import { StyleSheet, Text, View } from "react-native";
 
 
 import SubjectCard from "./SubjectCard";
-import { Syllabus } from "../../../types/roadmapTypes";
+import { Roadmap } from "../../../types/roadmapTypes";
 
 type RoadmapViewProps = {
-  syllabus: Syllabus;
-  onToggleSubject: (subjectId: string) => void;
+  roadmap: Roadmap;
+  // onToggleSubject: (subjectId: string) => void;
   onToggleUnit: (subjectId: string, unitId: string) => void;
   onToggleTopic: (
     subjectId: string,
@@ -22,22 +22,21 @@ type RoadmapViewProps = {
 };
 
 export default function RoadmapView({
-  syllabus,
-  onToggleSubject,
+  roadmap,
   onToggleUnit,
   onToggleTopic,
   onToggleSubTopic,
 }: RoadmapViewProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{syllabus.name}</Text>
+      <Text style={styles.title}>{roadmap.name}</Text>
 
       <Text style={styles.subtitle}>
         Track your progress, one step at a time.
       </Text>
 
-      <View style={styles.subjectList}>
-        {syllabus.subjects.map((subject) => (
+      {/* <View style={styles.subjectList}>
+        {roadmap.subjects.map((subject) => (
           <SubjectCard
             key={subject.id}
             subject={subject}
@@ -58,7 +57,7 @@ export default function RoadmapView({
             }
           />
         ))}
-      </View>
+      </View> */}
     </View>
   );
 }

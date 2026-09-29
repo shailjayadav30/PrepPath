@@ -641,22 +641,23 @@
 import { authClient } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Syllabus } from "../../../types/roadmapTypes";
+import { Roadmap } from "../../../types/roadmapTypes";
 import { useRouter } from "expo-router";
 
 export default function index() {
   const { data: session } = authClient.useSession();
   const userId = session?.user.id;
   const router = useRouter();
-  const [roadmap, setRoadmap] = useState<Syllabus[]>([]);
+  const [roadmap, setRoadmap] = useState<Roadmap[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function getRoadmap() {
     if (!userId) return;
     try {
       const cookie = await authClient.getCookie();
+      console.log("cookie", cookie);
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_BASE_URL}/api/syllabus`,
+        `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap`,
         {
           method: "GET",
           headers: {
@@ -669,7 +670,8 @@ export default function index() {
       }
 
       const data = await response.json();
-      const roadmaps: Syllabus[] = data.syllabus;
+      const roadmaps: Roadmap[] = data.roadmap;
+
       setRoadmap(roadmaps);
     } catch (error) {
       console.error("Error fetching roadmaps:", error);
@@ -696,6 +698,7 @@ export default function index() {
           {roadmap.map((m) => (
             <TouchableOpacity key={m.id} style={styles.button}>
               <Text style={styles.text}>{m.name}</Text>
+              <Text style={styles.text}>roadmap id is {m.id}</Text>
             </TouchableOpacity>
           ))}
         </View>

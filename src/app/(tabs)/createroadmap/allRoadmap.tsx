@@ -10,7 +10,7 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Syllabus } from "../../../../types/roadmapTypes";
+import { Roadmap } from "../../../../types/roadmapTypes";
 import RoadmapCard from "@/components/ui/RoadmapCard";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,7 +19,7 @@ export default function AllRoadmap() {
   const { data: session } = authClient.useSession();
   const userId = session?.user.id;
 
-  const [syllabusList, setSyllabusList] = useState<Syllabus[]>([]);
+  const [roadmapList, setRoadmapList] = useState<Roadmap[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +28,7 @@ export default function AllRoadmap() {
     try {
       const cookie = await authClient.getCookie();
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_BASE_URL}/api/syllabus/${roadmapId}`,
+        `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap/${roadmapId}`,
         {
           method: "DELETE",
           headers: {
@@ -37,10 +37,10 @@ export default function AllRoadmap() {
         },
       );
       if (!response.ok) {
-        throw new Error("Failed to fetch syllabus");
+        throw new Error("Failed to fetch Roadmap");
       }
-      setSyllabusList((prev) =>
-        prev.filter((syllabus) => syllabus.id !== roadmapId),
+      setRoadmapList((prev) =>
+        prev.filter((roadmap) => roadmap.id !== roadmapId),
       );
     } catch (error) {
       console.log("Error in deleting roadmap", error);
@@ -76,7 +76,7 @@ export default function AllRoadmap() {
         const data = await response.json();
 
         if (!cancelled) {
-          setSyllabusList(data.syllabus ?? []);
+          setRoadmapList(data.roadmap ?? []);
         }
       } catch (error) {
         console.log("Error", error);
@@ -130,12 +130,12 @@ export default function AllRoadmap() {
         </View>
 
         <View style={styles.countBadge}>
-          <Text style={styles.countText}>{syllabusList.length}</Text>
+          <Text style={styles.countText}>{roadmapList.length}</Text>
         </View>
       </View>
 
       {/* Roadmap List */}
-      {syllabusList.length === 0 ? (
+      {roadmapList.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="book-outline" size={64} color="#B8C9BF" />
 
@@ -150,16 +150,16 @@ export default function AllRoadmap() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
         >
-          {syllabusList.map((syllabus) => (
+          {roadmapList.map((roadmap) => (
             <RoadmapCard
-              key={syllabus.id}
-              syllabus={syllabus}
-              onDelete={() => deleteRoadmap(syllabus.id)}
+              key={roadmap.id}
+              roadmap={roadmap}
+              onDelete={() => deleteRoadmap(roadmap.id)}
               onPress={() =>
                 router.push({
                   pathname: "/(tabs)/createroadmap/[id]",
                   params: {
-                    id: syllabus.id,
+                    id: roadmap.id,
                   },
                 })
               }

@@ -16,17 +16,17 @@ export type Unit = {
   completed: boolean;
   topics: Topic[];
 };
-export type Subject = {
-  id: string;
-  name: string;
-  completed: boolean;
-  units: Unit[];
-};
+// export type Subject = {
+//   id: string;
+//   name: string;
+//   completed: boolean;
+//   units: Unit[];
+// };
 
-export type Syllabus = {
+export type Roadmap = {
   id: string;
   name: string;
-  subjects: Subject[];
+  units:Unit[]
 };
 
 export type RoadmapCheckBoxProps = {
