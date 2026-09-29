@@ -1,8 +1,6 @@
-import { StyleSheet, Text, View } from "react-native";
-import React from "react";
-import { Color, Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import HomeHeader from "@/components/header/homeHeader";
+import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
 
 export default function TabseLayout() {
   return (
@@ -27,7 +25,7 @@ export default function TabseLayout() {
         }}
       />
       <Tabs.Screen
-        name="createroadmap"
+        name="(createroadmap)"
         options={{
           title: "Roadmap",
           headerShown: false,
@@ -45,8 +43,12 @@ export default function TabseLayout() {
         options={{
           title: "Analytics",
           headerShown: false,
-          tabBarIcon: ({ color,focused }) => (
-            <Ionicons name={focused?"stats-chart":"stats-chart-outline"} size={18} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "stats-chart" : "stats-chart-outline"}
+              size={18}
+              color={color}
+            />
           ),
         }}
       />
@@ -55,8 +57,12 @@ export default function TabseLayout() {
         options={{
           title: "Settings",
           headerShown: false,
-          tabBarIcon: ({ color,focused }) => (
-            <Ionicons name={focused?"settings":"settings-outline"} size={18} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "settings" : "settings-outline"}
+              size={18}
+              color={color}
+            />
           ),
         }}
       />

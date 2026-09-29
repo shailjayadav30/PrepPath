@@ -201,7 +201,7 @@ export default function Roadmap() {
           <TouchableOpacity
             style={styles.allBtn}
             activeOpacity={0.8}
-            onPress={() => router.push("/(tabs)/createroadmap/allRoadmap")}
+            onPress={() => router.push("/(tabs)/(createroadmap)/allRoadmap")}
           >
             <Text style={styles.allText}>See All Roadmap</Text>
           </TouchableOpacity>

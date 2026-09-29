@@ -157,7 +157,7 @@ export default function AllRoadmap() {
               onDelete={() => deleteRoadmap(roadmap.id)}
               onPress={() =>
                 router.push({
-                  pathname: "/(tabs)/createroadmap/[id]",
+                  pathname: "/(tabs)/(createroadmap)/[id]",
                   params: {
                     id: roadmap.id,
                   },

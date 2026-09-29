@@ -1,742 +1,312 @@
-// import  { useState } from "react";
-// import {
-//   StyleSheet,
-//   Text,
-//   View,
-//   FlatList,
-//   ScrollView,
-//   TouchableOpacity,
-// } from "react-native";
-// import { SafeAreaView } from "react-native-safe-area-context";
-// import {
-//   Feather,
-//   MaterialCommunityIcons,
-//   MaterialIcons,
-// } from "@expo/vector-icons";
-
-// const FILTERS = [
-//   { id: "1", title: "All Topics" },
-//   { id: "2", title: "Incomplete (11)" },
-//   { id: "3", title: "Completed (24)" },
-//   { id: "4", title: "Highest Priority" },
-// ];
-
-// const SECTIONS = [
-//   {
-//     id: "3",
-//     number: "3",
-//     status: "IN PROGRESS",
-//     doneLabel: "3/4 Done",
-//     title: "Non-Linear Structures & Trees",
-//     defaultOpen: true,
-//     items: [
-//       {
-//         id: "a",
-//         title: "Binary Search Trees (BST)",
-//         subtitle: "Finished Oct 12",
-//         state: "completed",
-//         badge: "Completed",
-//       },
-//       {
-//         id: "b",
-//         title: "AVL Trees & Balancing Rot...",
-//         subtitle: "Finished Oct 14",
-//         state: "completed",
-//         badge: "Completed",
-//       },
-//       {
-//         id: "c",
-//         title: "Red-Black Tree Properties",
-//         subtitle: "Finished Oct 17",
-//         state: "completed",
-//         badge: "Completed",
-//       },
-//       {
-//         id: "d",
-//         title: "B-Trees & Multi-way Search",
-//         subtitle: "Est. 45 min study",
-//         state: "next",
-//         badge: "Next Up",
-//       },
-//     ],
-//   },
-//   {
-//     id: "4",
-//     number: "4",
-//     status: "UPCOMING",
-//     doneLabel: "0/5 Done",
-//     title: "Graph Algorithms & Traversals",
-//     defaultOpen: true,
-//     items: [
-//       {
-//         id: "e",
-//         title: "Breadth-First Search (BFS)",
-//         subtitle: "Queue-based traversal & state space",
-//         state: "upcoming",
-//         badge: "60 min",
-//       },
-//       {
-//         id: "f",
-//         title: "Depth-First Search (DFS) & To...",
-//         subtitle: "Recursive call stacks & DAG dependencies",
-//         state: "upcoming",
-//         badge: "50 min",
-//       },
-//       {
-//         id: "g",
-//         title: "Dijkstra's Shortest Path",
-//         subtitle: "Priority queue relaxation technique",
-//         state: "upcoming",
-//         badge: "75 min",
-//       },
-//     ],
-//   },
-// ];
-
-// const RoadmapItem = ({ item, isLast }) => {
-//   const isCompleted = item.state === "completed";
-//   const isNext = item.state === "next";
-
-//   return (
-//     <View style={styles.timelineRow}>
-//       <View style={styles.timelineTrack}>
-//         <View
-//           style={[
-//             styles.timelineDot,
-//             (isCompleted || isNext) && styles.timelineDotDone,
-//           ]}
-//         >
-//           <Feather name="check" size={12} color="#FFFFFF" />
-//         </View>
-//         {!isLast && <View style={styles.timelineLine} />}
-//       </View>
-
-//       <View
-//         style={[
-//           styles.timelineContent,
-//           isNext && styles.timelineContentNext,
-//         ]}
-//       >
-//         <View style={styles.timelineTopRow}>
-//           <Text
-//             style={[
-//               styles.itemTitle,
-//               isCompleted && styles.itemTitleCompleted,
-//             ]}
-//             numberOfLines={1}
-//           >
-//             {item.title}
-//           </Text>
-//           <View
-//             style={[
-//               styles.badge,
-//               isCompleted && styles.badgeCompleted,
-//               isNext && styles.badgeNext,
-//               item.state === "upcoming" && styles.badgeUpcoming,
-//             ]}
-//           >
-//             <Text
-//               style={[
-//                 styles.badgeText,
-//                 item.state === "upcoming" && styles.badgeTextUpcoming,
-//               ]}
-//             >
-//               {item.badge}
-//             </Text>
-//           </View>
-//         </View>
-//         <View style={styles.timelineSubRow}>
-//           {isNext && (
-//             <Feather
-//               name="clock"
-//               size={12}
-//               color="#6B7280"
-//               style={{ marginRight: 4 }}
-//             />
-//           )}
-//           <Text style={styles.itemSubtitle} numberOfLines={1}>
-//             {item.subtitle}
-//           </Text>
-//         </View>
-//       </View>
-//     </View>
-//   );
-// };
-
-// const SectionCard = ({ section }) => {
-//   const [open, setOpen] = useState(section.defaultOpen);
-
-//   return (
-//     <View style={styles.sectionCard}>
-//       <TouchableOpacity
-//         style={styles.sectionHeader}
-//         activeOpacity={0.7}
-//         onPress={() => setOpen((v) => !v)}
-//       >
-//         <View style={styles.sectionNumberCircle}>
-//           <Text style={styles.sectionNumberText}>{section.number}</Text>
-//         </View>
-//         <View style={{ flex: 1 }}>
-//           <Text style={styles.sectionStatus}>
-//             {section.status} · {section.doneLabel}
-//           </Text>
-//           <Text style={styles.sectionTitle}>{section.title}</Text>
-//         </View>
-//         <Feather
-//           name={open ? "chevron-up" : "chevron-down"}
-//           size={20}
-//           color="#6B7280"
-//         />
-//       </TouchableOpacity>
-
-//       {open && (
-//         <View style={styles.sectionBody}>
-//           {section.items.map((item, idx) => (
-//             <RoadmapItem
-//               key={item.id}
-//               item={item}
-//               isLast={idx === section.items.length - 1}
-//             />
-//           ))}
-//         </View>
-//       )}
-//     </View>
-//   );
-// };
-
-// const Index = () => {
-//   const [activeFilter, setActiveFilter] = useState("1");
-
-//   return (
-//     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-
-//       <ScrollView
-//         style={styles.scroll}
-//         contentContainerStyle={styles.scrollContent}
-//         showsVerticalScrollIndicator={false}
-//       >
-
-//         {/* Active Syllabus */}
-//         <TouchableOpacity style={styles.syllabusCard} activeOpacity={0.8}>
-//           <View style={styles.syllabusIconBox}>
-//             <MaterialCommunityIcons
-//               name="crop-square"
-//               size={20}
-//               color="#16A673"
-//             />
-//           </View>
-//           <View style={{ flex: 1 }}>
-//             <Text style={styles.syllabusLabel}>Active Syllabus</Text>
-//             <Text style={styles.syllabusTitle} numberOfLines={1}>
-//               CS 201: Data Structures & Algorith...
-//             </Text>
-//           </View>
-//           <Feather name="chevrons-up" size={18} color="#9CA3AF" />
-//         </TouchableOpacity>
-
-//         {/* Progress card */}
-//         <View style={styles.progressCard}>
-//           <View style={styles.progressTopRow}>
-//             <View>
-//               <Text style={styles.progressLabel}>Term Progression</Text>
-//               <View style={styles.progressPctRow}>
-//                 <Text style={styles.progressPct}>68%</Text>
-//                 <Text style={styles.progressPctLabel}>Completed</Text>
-//               </View>
-//             </View>
-//             <View style={styles.progressRing}>
-//               <MaterialIcons name="settings" size={18} color="#16A673" />
-//             </View>
-//           </View>
-
-//           <View style={styles.progressBarTrack}>
-//             <View style={[styles.progressBarFill, { width: "68%" }]} />
-//           </View>
-
-//           <View style={styles.statsRow}>
-//             <View style={styles.statBox}>
-//               <Feather name="check-square" size={16} color="#16A673" />
-//               <Text style={styles.statValue}>24 / 35</Text>
-//               <Text style={styles.statLabel}>Mastered</Text>
-//             </View>
-//             <View style={styles.statBox}>
-//               <Feather name="calendar" size={16} color="#16A673" />
-//               <Text style={styles.statValue}>8 Days</Text>
-//               <Text style={styles.statLabel}>Midterm</Text>
-//             </View>
-//             <View style={styles.statBox}>
-//               <Feather name="droplet" size={16} color="#F59E0B" />
-//               <Text style={styles.statValue}>5 Days</Text>
-//               <Text style={styles.statLabel}>Streak 🔥</Text>
-//             </View>
-//           </View>
-//         </View>
-
-//         {/* Filter pills */}
-//         <FlatList
-//           data={FILTERS}
-//           horizontal
-//           showsHorizontalScrollIndicator={false}
-//           keyExtractor={(item) => item.id}
-//           contentContainerStyle={styles.filterList}
-//           renderItem={({ item }) => {
-//             const active = item.id === activeFilter;
-//             return (
-//               <TouchableOpacity
-//                 onPress={() => setActiveFilter(item.id)}
-//                 style={[styles.pill, active && styles.pillActive]}
-//                 activeOpacity={0.8}
-//               >
-//                 <Text
-//                   style={[styles.pillText, active && styles.pillTextActive]}
-//                   numberOfLines={1}
-//                 >
-//                   {item.title}
-//                 </Text>
-//               </TouchableOpacity>
-//             );
-//           }}
-//         />
-
-//         {/* Topic sections */}
-//         {SECTIONS.map((section) => (
-//           <SectionCard key={section.id} section={section} />
-//         ))}
-
-//         {/* Add topic */}
-//         <TouchableOpacity style={styles.addButton} activeOpacity={0.8}>
-//           <Feather name="plus-circle" size={18} color="#16A673" />
-//           <Text style={styles.addButtonText}>Add Topic / Custom Note</Text>
-//         </TouchableOpacity>
-//       </ScrollView>
-
-//     </SafeAreaView>
-//   );
-// };
-
-// export default Index;
-
-// const GREEN = "#16A673";
-// const GREEN_DARK = "#0F5132";
-
-// const styles = StyleSheet.create({
-//   safeArea: {
-//     flex: 1,
-//     backgroundColor: "#F5F7FA",
-//   },
-//   scroll: {
-//     flex: 1,
-//   },
-//   scrollContent: {
-//     paddingHorizontal: 16,
-//     paddingBottom: 24,
-//   },
-
-//   // Active syllabus
-//   syllabusCard: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     backgroundColor: "#FFFFFF",
-//     borderRadius: 16,
-//     padding: 14,
-//     marginBottom: 14,
-//     gap: 12,
-//   },
-//   syllabusIconBox: {
-//     width: 38,
-//     height: 38,
-//     borderRadius: 10,
-//     backgroundColor: "#E6F7EF",
-//     alignItems: "center",
-//     justifyContent: "center",
-//   },
-//   syllabusLabel: {
-//     fontSize: 12,
-//     color: "#6B7280",
-//     marginBottom: 2,
-//   },
-//   syllabusTitle: {
-//     fontSize: 15,
-//     fontWeight: "700",
-//     color: "#111827",
-//   },
-
-//   // Progress card
-//   progressCard: {
-//     backgroundColor: "#FFFFFF",
-//     borderRadius: 20,
-//     padding: 18,
-//     marginBottom: 16,
-//     shadowColor: "#000",
-//     shadowOffset: { width: 0, height: 4 },
-//     shadowOpacity: 0.05,
-//     shadowRadius: 12,
-//     elevation: 2,
-//   },
-//   progressTopRow: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "flex-start",
-//     marginBottom: 14,
-//   },
-//   progressLabel: {
-//     fontSize: 13,
-//     color: "#6B7280",
-//     marginBottom: 4,
-//   },
-//   progressPctRow: {
-//     flexDirection: "row",
-//     alignItems: "baseline",
-//     gap: 8,
-//   },
-//   progressPct: {
-//     fontSize: 32,
-//     fontWeight: "800",
-//     color: "#111827",
-//   },
-//   progressPctLabel: {
-//     fontSize: 14,
-//     fontWeight: "600",
-//     color: "#374151",
-//   },
-//   progressRing: {
-//     width: 48,
-//     height: 48,
-//     borderRadius: 24,
-//     borderWidth: 3,
-//     borderColor: GREEN,
-//     alignItems: "center",
-//     justifyContent: "center",
-//   },
-//   progressBarTrack: {
-//     height: 8,
-//     borderRadius: 4,
-//     backgroundColor: "#E5E7EB",
-//     overflow: "hidden",
-//     marginBottom: 16,
-//   },
-//   progressBarFill: {
-//     height: "100%",
-//     borderRadius: 4,
-//     backgroundColor: GREEN,
-//   },
-//   statsRow: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     gap: 10,
-//   },
-//   statBox: {
-//     flex: 1,
-//     backgroundColor: "#F3F4F6",
-//     borderRadius: 12,
-//     paddingVertical: 12,
-//     alignItems: "center",
-//     gap: 4,
-//   },
-//   statValue: {
-//     fontSize: 14,
-//     fontWeight: "700",
-//     color: "#111827",
-//   },
-//   statLabel: {
-//     fontSize: 11,
-//     color: "#6B7280",
-//   },
-
-//   // Filter pills
-//   filterList: {
-//     paddingBottom: 16,
-//     gap: 8,
-//   },
-//   pill: {
-//     paddingHorizontal: 16,
-//     paddingVertical: 9,
-//     borderRadius: 20,
-//     backgroundColor: "#FFFFFF",
-//     marginRight: 8,
-//   },
-//   pillActive: {
-//     backgroundColor: GREEN_DARK,
-//   },
-//   pillText: {
-//     fontSize: 13,
-//     fontWeight: "600",
-//     color: "#374151",
-//   },
-//   pillTextActive: {
-//     color: "#FFFFFF",
-//   },
-
-//   // Section card
-//   sectionCard: {
-//     backgroundColor: "#FFFFFF",
-//     borderRadius: 18,
-//     marginBottom: 16,
-//     overflow: "hidden",
-//   },
-//   sectionHeader: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     padding: 16,
-//     gap: 12,
-//   },
-//   sectionNumberCircle: {
-//     width: 32,
-//     height: 32,
-//     borderRadius: 16,
-//     backgroundColor: "#E6F7EF",
-//     alignItems: "center",
-//     justifyContent: "center",
-//   },
-//   sectionNumberText: {
-//     fontSize: 14,
-//     fontWeight: "700",
-//     color: GREEN_DARK,
-//   },
-//   sectionStatus: {
-//     fontSize: 11,
-//     fontWeight: "700",
-//     color: GREEN,
-//     letterSpacing: 0.3,
-//     marginBottom: 2,
-//   },
-//   sectionTitle: {
-//     fontSize: 16,
-//     fontWeight: "700",
-//     color: "#111827",
-//   },
-//   sectionBody: {
-//     paddingHorizontal: 16,
-//     paddingBottom: 16,
-//   },
-
-//   // Timeline items
-//   timelineRow: {
-//     flexDirection: "row",
-//   },
-//   timelineTrack: {
-//     width: 24,
-//     alignItems: "center",
-//   },
-//   timelineDot: {
-//     width: 22,
-//     height: 22,
-//     borderRadius: 11,
-//     backgroundColor: "#D1D5DB",
-//     alignItems: "center",
-//     justifyContent: "center",
-//   },
-//   timelineDotDone: {
-//     backgroundColor: GREEN,
-//   },
-//   timelineLine: {
-//     width: 2,
-//     flex: 1,
-//     backgroundColor: "#D1FAE5",
-//     marginVertical: 2,
-//   },
-//   timelineContent: {
-//     flex: 1,
-//     paddingBottom: 18,
-//     marginLeft: 10,
-//   },
-//   timelineContentNext: {
-//     backgroundColor: "#F0FDF6",
-//     borderRadius: 12,
-//     padding: 10,
-//     marginLeft: 10,
-//     marginBottom: 4,
-//   },
-//   timelineTopRow: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     justifyContent: "space-between",
-//     gap: 8,
-//   },
-//   itemTitle: {
-//     fontSize: 14,
-//     fontWeight: "600",
-//     color: "#111827",
-//     flexShrink: 1,
-//   },
-//   itemTitleCompleted: {
-//     color: "#9CA3AF",
-//     textDecorationLine: "line-through",
-//   },
-//   itemSubtitle: {
-//     fontSize: 12,
-//     color: "#9CA3AF",
-//     marginTop: 2,
-//   },
-//   timelineSubRow: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//   },
-//   badge: {
-//     paddingHorizontal: 10,
-//     paddingVertical: 4,
-//     borderRadius: 12,
-//     backgroundColor: "#F3F4F6",
-//   },
-//   badgeCompleted: {
-//     backgroundColor: "#DCFCE7",
-//   },
-//   badgeNext: {
-//     backgroundColor: GREEN,
-//   },
-//   badgeUpcoming: {
-//     backgroundColor: "#F3F4F6",
-//   },
-//   badgeText: {
-//     fontSize: 11,
-//     fontWeight: "700",
-//     color: "#15803D",
-//   },
-//   badgeTextUpcoming: {
-//     color: "#6B7280",
-//   },
-
-//   // Add topic
-//   addButton: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     justifyContent: "center",
-//     gap: 8,
-//     backgroundColor: "#FFFFFF",
-//     borderRadius: 16,
-//     paddingVertical: 16,
-//     marginBottom: 8,
-//   },
-//   addButtonText: {
-//     fontSize: 14,
-//     fontWeight: "700",
-//     color: GREEN,
-//   },
-
-//   // Tab bar
-//   tabBar: {
-//     flexDirection: "row",
-//     backgroundColor: "#FFFFFF",
-//     borderTopWidth: 1,
-//     borderTopColor: "#F3F4F6",
-//     paddingTop: 10,
-//     paddingBottom: 8,
-//   },
-//   tabItem: {
-//     flex: 1,
-//     alignItems: "center",
-//     gap: 4,
-//   },
-//   tabLabel: {
-//     fontSize: 11,
-//     color: "#9CA3AF",
-//   },
-//   tabLabelActive: {
-//     fontSize: 11,
-//     color: GREEN,
-//     fontWeight: "700",
-//   },
-// });
-
 import { authClient } from "@/lib/auth-client";
-import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Roadmap } from "../../../types/roadmapTypes";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Roadmap } from "../../../types/roadmapTypes";
 
-export default function index() {
+const GREEN = "#16A673";
+const GREEN_DARK = "#0F5132";
+const WHITE = "#FFFFFF";
+const GREEN_TINT = "#E8F6F1";
+const TEXT_MUTED = "#5F6F68";
+
+export default function Index() {
   const { data: session } = authClient.useSession();
   const userId = session?.user.id;
   const router = useRouter();
-  const [roadmap, setRoadmap] = useState<Roadmap[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  async function getRoadmap() {
+  const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const getRoadmap = useCallback(async () => {
     if (!userId) return;
     try {
       const cookie = await authClient.getCookie();
-      console.log("cookie", cookie);
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap`,
+        `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap/isfollowing`,
         {
           method: "GET",
-          headers: {
-            Cookie: cookie ?? "",
-          },
+          headers: { Cookie: cookie ?? "" },
         },
       );
+
       if (!response.ok) {
         throw new Error("Failed to fetch roadmaps");
       }
 
       const data = await response.json();
-      const roadmaps: Roadmap[] = data.roadmap;
-
-      setRoadmap(roadmaps);
+      setRoadmaps(data.roadmaps ?? []);
     } catch (error) {
       console.error("Error fetching roadmaps:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }
+  }, [userId]);
+
   useEffect(() => {
     getRoadmap();
-  }, [userId]);
+  }, [getRoadmap]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    getRoadmap();
+  };
+
+  const openRoadmap = (id: string) => {
+    router.push({
+      pathname: "/(tabs)/(createroadmap)/[id]",
+      params: { id },
+    });
+  };
+
+  const createRoadmap = () => {
+    router.push("/(tabs)/(createroadmap)/index");
+  };
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.text}>Loading...</Text>
-      </View>
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator size="large" color={GREEN} />
+        <Text style={styles.loadingText}>Loading your roadmaps...</Text>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {roadmap ? (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* Header */}
+      <View style={styles.header}>
         <View>
-          {roadmap.map((m) => (
-            <TouchableOpacity key={m.id} style={styles.button}>
-              <Text style={styles.text}>{m.name}</Text>
-              <Text style={styles.text}>roadmap id is {m.id}</Text>
-            </TouchableOpacity>
-          ))}
+          <Text style={styles.headerTitle}>My Roadmaps</Text>
+          <Text style={styles.headerSubtitle}>
+            {roadmaps.length > 0
+              ? `${roadmaps.length} roadmap${roadmaps.length > 1 ? "s" : ""} you're following`
+              : "Start your study journey"}
+          </Text>
         </View>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={createRoadmap}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={26} color={WHITE} />
+        </TouchableOpacity>
+      </View>
+
+      {roadmaps.length > 0 ? (
+        <FlatList
+          data={roadmaps}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={GREEN}
+              colors={[GREEN]}
+            />
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.card}
+              activeOpacity={0.85}
+              onPress={() => openRoadmap(item.id)}
+            >
+              <View style={styles.cardIcon}>
+                <Ionicons name="map" size={22} color={GREEN} />
+              </View>
+
+              <View style={styles.cardBody}>
+                <Text style={styles.cardTitle} numberOfLines={2}>
+                  {item.name}
+                </Text>
+                <Text style={styles.cardHint}>Tap to continue studying</Text>
+              </View>
+
+              <Ionicons name="chevron-forward" size={22} color={GREEN} />
+            </TouchableOpacity>
+          )}
+        />
       ) : (
-        <View>
-          <Text style={styles.text}> You don't have any roadmap yet. </Text>
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconCircle}>
+            <Ionicons name="map-outline" size={48} color={GREEN} />
+          </View>
+          <Text style={styles.emptyTitle}>No roadmap yet</Text>
+          <Text style={styles.emptyText}>
+            Upload your syllabus and we'll break it into topics and subtopics
+            you can study one at a time.
+          </Text>
           <TouchableOpacity
-            style={styles.button}
-            onPress={() => router.push("/(tabs)/createroadmap")}
+            style={styles.primaryButton}
+            onPress={createRoadmap}
+            activeOpacity={0.85}
           >
-            <Text style={styles.buttonText}>Create Roadmap</Text>
+            <Ionicons name="cloud-upload-outline" size={20} color={WHITE} />
+            <Text style={styles.primaryButtonText}>Create Roadmap</Text>
           </TouchableOpacity>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    backgroundColor: WHITE,
   },
-  text: {
-    color: "red",
-    fontSize: 18,
-    marginBottom: 20,
+  center: {
+    flex: 1,
+    backgroundColor: WHITE,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 14,
+    fontSize: 15,
+    color: TEXT_MUTED,
+  },
+
+  // Header
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 18,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: GREEN_DARK,
+  },
+  headerSubtitle: {
+    marginTop: 2,
+    fontSize: 14,
+    color: TEXT_MUTED,
+  },
+  addButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: GREEN_DARK,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+
+  // List
+  list: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: WHITE,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#D9EFE7",
+    borderLeftWidth: 5,
+    borderLeftColor: GREEN,
+    shadowColor: GREEN_DARK,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: GREEN_TINT,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+  cardBody: {
+    flex: 1,
+    marginRight: 8,
+  },
+  cardTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: GREEN_DARK,
+  },
+  cardHint: {
+    marginTop: 3,
+    fontSize: 13,
+    color: TEXT_MUTED,
+  },
+
+  // Empty state
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    paddingBottom: 60,
+  },
+  emptyIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: GREEN_TINT,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 22,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: GREEN_DARK,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: TEXT_MUTED,
     textAlign: "center",
+    marginBottom: 28,
   },
-  button: {
-    backgroundColor: "#000",
+  primaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: GREEN,
     paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 10,
+    paddingHorizontal: 26,
+    borderRadius: 14,
+    gap: 8,
+    shadowColor: GREEN_DARK,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 5,
   },
-  buttonText: {
-    color: "#fff",
+  primaryButtonText: {
+    color: WHITE,
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });

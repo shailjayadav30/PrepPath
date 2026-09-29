@@ -1,34 +1,17 @@
-  export type SubTopic = {
-  id: string;
-  name: string;
-  completed: boolean;
-};
-
+export type SubTopic = { id: string; name: string; completed: boolean };
 export type Topic = {
   id: string;
   name: string;
   completed: boolean;
   subTopics: SubTopic[];
 };
-export type Unit = {
-  id: string;
-  name: string;
-  completed: boolean;
-  topics: Topic[];
-};
-// export type Subject = {
-//   id: string;
-//   name: string;
-//   completed: boolean;
-//   units: Unit[];
-// };
-
+export type Unit = { id: string; name: string; topics: Topic[] };
 export type Roadmap = {
   id: string;
   name: string;
-  units:Unit[]
+  isFollowing: boolean;
+  units: Unit[];
 };
-
 export type RoadmapCheckBoxProps = {
   onPress: () => void;
   size?: number;
