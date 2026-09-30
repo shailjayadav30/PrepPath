@@ -72,7 +72,7 @@ export default function Index() {
   };
 
   const createRoadmap = () => {
-    router.push("/(tabs)/(createroadmap)/index");
+    router.push("/(tabs)/(createroadmap)");
   };
 
   if (loading) {

@@ -38,7 +38,7 @@ export default function TabseLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="analytics"
         options={{
           title: "Analytics",
@@ -51,7 +51,7 @@ export default function TabseLayout() {
             />
           ),
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="settings"
         options={{
