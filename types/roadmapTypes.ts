@@ -44,3 +44,12 @@ export type UnitCardProps = {
   onToggleTopic: (topicId: string) => void;
   onToggleSubTopic: (topicId: string, subTopicId: string) => void;
 };
+
+
+export const getInitials = (name?: string) =>
+  (name ?? "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");

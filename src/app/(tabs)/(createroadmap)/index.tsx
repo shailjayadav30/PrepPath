@@ -6,407 +6,406 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  LayoutAnimation,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+const MAX_SIZE = 5 * 1024 * 1024; // matches the multer limit on the backend
+
+const GREEN = "#16A673";
+const GREEN_DARK = "#0F5132";
+const GREEN_TINT = "#E8F6F1";
+const BORDER = "#D9EFE7";
+const MUTED = "#6B7A73";
+const DANGER = "#D64545";
+
+const formatSize = (bytes?: number) => {
+  if (!bytes) return "";
+  return bytes < 1024 * 1024
+    ? `${Math.round(bytes / 1024)} KB`
+    : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+};
+
+const animate = () =>
+  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
 export default function Roadmap() {
   const router = useRouter();
   const [fileInfo, setFileInfo] =
     useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [loading, setLoading] = useState(false);
-  const [roadmaps, setRoadmaps] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [name, setName] = useState("");
+  const [roadmap, setRoadmap] = useState<any | null>(null);
+  const [expandedUnits, setExpandedUnits] = useState<Record<string, boolean>>({});
+  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
 
-  // Which subject card is expanded, and which unit/topic inside it
-  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
-  const [expandedUnits, setExpandedUnits] = useState<Record<string, boolean>>(
-    {},
-  );
-  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>(
-    {},
-  );
-  // const trimmedName = name.trim();
-  // const canUpload = trimmedName.length > 0 && !loading;
+  /* ---------------- upload logic ---------------- */
+
   const pickDocument = async () => {
-    // if (!trimmedName) {
-    //   Alert.alert(
-    //     "Name required",
-    //     "Please give this roadmap a name before uploading.",
-    //   );
-    //   return;
-    // }
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: "application/pdf",
         copyToCacheDirectory: true,
       });
+      if (result.canceled) return;
 
-      if (!result.canceled) {
-        const selectedAsset = result.assets[0];
-        setFileInfo(selectedAsset);
-        // generateRoadmap(selectedAsset, trimmedName);
-        generateRoadmap(selectedAsset);
-      } else {
-        Alert.alert("Canceled", "No document was selected.");
+      const asset = result.assets[0];
+      if (asset.size && asset.size > MAX_SIZE) {
+        Alert.alert("File too large", "Please choose a PDF smaller than 5 MB.");
+        return;
       }
-    } catch (error) {
-      console.error("Error picking document:", error);
+      setFileInfo(asset);
+      generateRoadmap(asset);
+    } catch (e) {
+      console.error("Error picking document:", e);
       Alert.alert("Error", "An error occurred while picking the document.");
     }
   };
 
   const uploadWithXHR = async (
     file: DocumentPicker.DocumentPickerAsset,
-    // roadmapName: string,
   ): Promise<any> => {
     const cookies = await authClient.getCookie();
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-
       xhr.open("POST", `${BASE_URL}/api/uploadfile`);
-      if (cookies) {
-        xhr.setRequestHeader("Cookie", cookies);
-      }
+      if (cookies) xhr.setRequestHeader("Cookie", cookies);
       xhr.withCredentials = true;
 
       xhr.onload = () => {
-        console.log("Status:", xhr.status);
-        console.log("Response:", xhr.responseText);
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             resolve(JSON.parse(xhr.responseText));
-          } catch (e) {
-            reject(new Error("Invalid JSON response from server"));
+          } catch {
+            reject(new Error("Invalid response from server"));
           }
         } else {
-          reject(new Error(`Server responded with ${xhr.status}`));
+          // surface the backend's message (e.g. "Could not extract a roadmap...")
+          let message = `Server responded with ${xhr.status}`;
+          try {
+            message = JSON.parse(xhr.responseText)?.message ?? message;
+          } catch {}
+          reject(new Error(message));
         }
       };
-
       xhr.onerror = () => reject(new Error("Network request failed"));
 
       const formData = new FormData();
-      // formData.append("name", roadmapName);
       formData.append("pdffile", {
         uri: file.uri,
         name: file.name || "upload.pdf",
         type: file.mimeType || "application/pdf",
       } as any);
-
       xhr.send(formData);
     });
   };
 
-  const generateRoadmap = async (
-    file: DocumentPicker.DocumentPickerAsset,
-    // roadmapName: string,
-  ) => {
+  const generateRoadmap = async (file: DocumentPicker.DocumentPickerAsset) => {
     setLoading(true);
     setError(null);
+    setRoadmap(null);
 
     try {
       let data;
 
       if (Platform.OS === "web") {
         const formData = new FormData();
-        // formData.append("name", roadmapName);
         // @ts-ignore
-        if (file.file) {
-          // @ts-ignore
-          formData.append("file", file.file, file.name);
-        } else {
-          throw new Error("No file blob available for web upload");
-        }
+        if (!file.file) throw new Error("No file blob available for web upload");
+        // @ts-ignore  (field name must match upload.single("pdffile") on the server)
+        formData.append("pdffile", file.file, file.name);
 
         const res = await fetch(`${BASE_URL}/api/uploadfile`, {
           method: "POST",
           body: formData,
           credentials: "include",
         });
-
         if (!res.ok) throw new Error(`Server responded with ${res.status}`);
         data = await res.json();
       } else {
-        // data = await uploadWithXHR(file, roadmapName);
         data = await uploadWithXHR(file);
       }
 
-      if (!data.success) {
-        throw new Error("Upload was not successful");
-      }
+      if (!data.success) throw new Error("Upload was not successful");
 
-      // Matches RoadmapSchema: { subjects: [{ name, units: [{ name, topics: [{ name, subTopics: [] }] }] }] }
-      const roadmap = data.roadmap || [];
-      const units = roadmap.units ?? [];
-      const topicCount = units.reduce(
-        (sum: number, units: any) => sum + (units.topics?.length ?? 0),
-        0,
-      );
-
-      const normalized = [
-        {
-          id: roadmap.id,
-          title: roadmap.name,
-          description: `${units.length} units covering ${topicCount} topics`,
-          steps: topicCount,
-          raw: roadmap,
-        },
-      ];
-
-      setRoadmaps(normalized);
-      setExpandedCardId(null);
+      animate();
+      setRoadmap(data.roadmap);
       setExpandedUnits({});
       setExpandedTopics({});
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error generating roadmap:", err);
       setError(
-        "Something went wrong while generating your roadmap. Please try again.",
+        err?.message && !err.message.startsWith("Server responded")
+          ? err.message
+          : "Something went wrong while generating your roadmap. Please try again.",
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleCard = (id: string) => {
-    setExpandedCardId((prev) => (prev === id ? null : id));
+  const reset = () => {
+    animate();
+    setFileInfo(null);
+    setRoadmap(null);
+    setError(null);
+    setExpandedUnits({});
+    setExpandedTopics({});
   };
 
   const toggleUnit = (key: string) => {
-    setExpandedUnits((prev) => ({ ...prev, [key]: !prev[key] }));
+    animate();
+    setExpandedUnits((p) => ({ ...p, [key]: !p[key] }));
+  };
+  const toggleTopic = (key: string) => {
+    animate();
+    setExpandedTopics((p) => ({ ...p, [key]: !p[key] }));
   };
 
-  const toggleTopic = (key: string) => {
-    setExpandedTopics((prev) => ({ ...prev, [key]: !prev[key] }));
+  const openRoadmap = () => {
+    if (!roadmap?.id) return;
+    router.push({
+      pathname: "/(tabs)/(createroadmap)/[id]",
+      params: { id: roadmap.id },
+    });
   };
+
+  /* ---------------- derived stats ---------------- */
+
+  const units: any[] = roadmap?.units ?? [];
+  const topicCount = units.reduce((s, u) => s + (u.topics?.length ?? 0), 0);
+  const subTopicCount = units.reduce(
+    (s, u) =>
+      s + (u.topics ?? []).reduce((t: number, x: any) => t + (x.subTopics?.length ?? 0), 0),
+    0,
+  );
+
+  /* ---------------- UI ---------------- */
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScrollView
-        style={styles.container}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Header */}
         <View style={styles.header}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Create Roadmap</Text>
+            <Text style={styles.subtitle}>
+              Upload your syllabus and we'll split it into units, topics and
+              subtopics.
+            </Text>
+          </View>
           <TouchableOpacity
             style={styles.allBtn}
             activeOpacity={0.8}
             onPress={() => router.push("/(tabs)/(createroadmap)/allRoadmap")}
           >
-            <Text style={styles.allText}>See All Roadmap</Text>
+            <Feather name="map" size={15} color={GREEN_DARK} />
+            <Text style={styles.allText}>My roadmaps</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Form card — name + upload grouped together */}
-        <View style={styles.form}>
-          <View style={styles.fieldGroup}>
-            <View style={styles.labelWithIcon}>
-              <Feather name="edit-3" size={14} color="#374151" />
-              <Text style={styles.labelText}>Roadmap Name</Text>
-            </View>
-            <TextInput
-              placeholder="e.g. Semester 3 – DBMS"
-              placeholderTextColor="#9CA3AF"
-              value={name}
-              onChangeText={setName}
-              style={styles.input}
-              editable={!loading}
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <View style={styles.labelWithIcon}>
-              <Feather name="file-text" size={14} color="#374151" />
-              <Text style={styles.labelText}>Upload Syllabus (PDF)</Text>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.uploadBox, styles.uploadBoxDisabled]}
-              onPress={pickDocument}
-              activeOpacity={0.85}
-              disabled={loading}
-            >
-              <View
-                style={[
-                  styles.uploadIconWrapper,
-                  styles.uploadIconWrapperDisabled,
-                ]}
-              >
-                <Feather
-                  name="upload-cloud"
-                  size={22}
-                  // color={canUpload ? "#16A673" : "#9CA3AF"}
-                  color={"#16A673"}
-                />
+        {/* Upload card */}
+        {!roadmap && (
+          <View style={styles.uploadCard}>
+            {loading ? (
+              <View style={styles.stateBox}>
+                <ActivityIndicator color={GREEN} size="large" />
+                <Text style={styles.stateTitle}>Reading your syllabus…</Text>
+                <Text style={styles.stateText}>
+                  Breaking it into units and topics. This can take up to a
+                  minute, so please keep the app open.
+                </Text>
+                {fileInfo && (
+                  <View style={styles.filePill}>
+                    <Feather name="file-text" size={14} color={GREEN} />
+                    <Text style={styles.filePillText} numberOfLines={1}>
+                      {fileInfo.name}
+                    </Text>
+                  </View>
+                )}
               </View>
-              <Text style={styles.uploadTitle} numberOfLines={1}>
-                {fileInfo ? fileInfo.name : "Tap to upload a PDF"}
-              </Text>
-              <Text style={styles.uploadSubtitle}>
-                {!fileInfo
-                  ? "Tap to choose a different file"
-                  : "PDF files only"}
-              </Text>
-            </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.dropZone}
+                onPress={pickDocument}
+                activeOpacity={0.85}
+              >
+                <View style={styles.uploadIcon}>
+                  <Feather name="upload-cloud" size={28} color={GREEN} />
+                </View>
+                <Text style={styles.dropTitle}>
+                  {fileInfo ? "Choose a different PDF" : "Tap to upload your syllabus"}
+                </Text>
+                <Text style={styles.dropText}>PDF only · up to 5 MB</Text>
+              </TouchableOpacity>
+            )}
+
+            {fileInfo && !loading && (
+              <View style={styles.fileRow}>
+                <View style={styles.fileIcon}>
+                  <Feather name="file-text" size={18} color={GREEN} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fileName} numberOfLines={1}>
+                    {fileInfo.name}
+                  </Text>
+                  <Text style={styles.fileSize}>{formatSize(fileInfo.size)}</Text>
+                </View>
+                <TouchableOpacity onPress={reset} hitSlop={10}>
+                  <Feather name="x" size={20} color={MUTED} />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {error && !loading && (
+              <View style={styles.errorBox}>
+                <View style={styles.errorTop}>
+                  <Feather name="alert-circle" size={18} color={DANGER} />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+                {fileInfo && (
+                  <TouchableOpacity
+                    style={styles.retryBtn}
+                    onPress={() => generateRoadmap(fileInfo)}
+                    activeOpacity={0.85}
+                  >
+                    <Feather name="refresh-cw" size={14} color="#fff" />
+                    <Text style={styles.retryText}>Try again</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
           </View>
+        )}
 
-          {loading && (
-            <View style={styles.loadingRow}>
-              <ActivityIndicator color="#16A673" size="small" />
-              <Text style={styles.loadingText}>Generating your roadmap…</Text>
-            </View>
-          )}
+        {/* Tips (only before a file is chosen) */}
+        {!roadmap && !loading && !fileInfo && (
+          <View style={styles.tips}>
+            <Tip icon="check-circle" text="Works best with PDFs where you can select the text." />
+            <Tip icon="layers" text="Only the first subject or paper in the file is used." />
+            <Tip icon="edit-3" text="You can tick off and delete items after it's created." />
+          </View>
+        )}
 
-          {error && !loading && (
-            <View style={styles.errorRow}>
-              <Feather name="alert-circle" size={16} color="#DC2626" />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Generated Roadmaps */}
-        {roadmaps.length > 0 && !loading && (
-          <View style={styles.resultsSection}>
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>GENERATED ROADMAPS</Text>
-              <View style={styles.dividerLine} />
+        {/* Result */}
+        {roadmap && (
+          <View>
+            <View style={styles.successBanner}>
+              <Feather name="check-circle" size={18} color={GREEN} />
+              <Text style={styles.successText}>Your roadmap is ready</Text>
             </View>
 
-            {roadmaps.map((item) => {
-              const isExpanded = expandedCardId === item.id;
+            <View style={styles.resultCard}>
+              <Text style={styles.resultTitle}>{roadmap.name}</Text>
+
+              <View style={styles.statsRow}>
+                <Stat value={units.length} label="Units" />
+                <View style={styles.statDivider} />
+                <Stat value={topicCount} label="Topics" />
+                <View style={styles.statDivider} />
+                <Stat value={subTopicCount} label="Subtopics" />
+              </View>
+
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={openRoadmap}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.primaryBtnText}>Open roadmap</Text>
+                <Feather name="arrow-right" size={18} color="#fff" />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.secondaryBtn} onPress={reset} activeOpacity={0.7}>
+                <Text style={styles.secondaryBtnText}>Upload another syllabus</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sectionLabel}>PREVIEW</Text>
+
+            {units.map((unit: any, ui: number) => {
+              const unitKey = `u-${ui}`;
+              const unitOpen = !!expandedUnits[unitKey];
+              const topics = unit.topics ?? [];
 
               return (
-                <View key={item.id} style={styles.cardWrapper}>
+                <View key={unitKey} style={styles.unitCard}>
                   <TouchableOpacity
-                    style={styles.card}
-                    activeOpacity={0.85}
-                    onPress={() => toggleCard(item.id)}
+                    style={styles.unitHeader}
+                    onPress={() => toggleUnit(unitKey)}
+                    activeOpacity={0.8}
                   >
-                    <View style={styles.cardIconWrapper}>
-                      <Feather name="check-square" size={18} color="#16A673" />
+                    <View style={styles.unitBadge}>
+                      <Text style={styles.unitBadgeText}>{ui + 1}</Text>
                     </View>
-
-                    <View style={styles.cardTextWrapper}>
-                      <Text style={styles.cardTitle}>{item.title}</Text>
-                      <Text style={styles.cardDescription} numberOfLines={2}>
-                        {item.description}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.unitTitle}>{unit.name}</Text>
+                      <Text style={styles.unitMeta}>
+                        {topics.length} topic{topics.length === 1 ? "" : "s"}
                       </Text>
-                      <Text style={styles.cardMeta}>{item.steps} steps</Text>
                     </View>
-
                     <Feather
-                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      name={unitOpen ? "chevron-up" : "chevron-down"}
                       size={20}
-                      color="#9CA3AF"
+                      color={MUTED}
                     />
                   </TouchableOpacity>
 
-                  {isExpanded && (
-                    <View style={styles.expandedPanel}>
-                      {item.raw.units?.map((unit: any, unitIndex: number) => {
-                        const unitKey = `${item.id}-${unitIndex}`;
-                        const isUnitOpen = expandedUnits[unitKey];
+                  {unitOpen &&
+                    topics.map((topic: any, ti: number) => {
+                      const topicKey = `${unitKey}-t-${ti}`;
+                      const topicOpen = !!expandedTopics[topicKey];
+                      const subs = topic.subTopics ?? [];
+                      const hasSubs = subs.length > 0;
 
-                        return (
-                          <View key={unitKey} style={styles.unitCard}>
-                            <TouchableOpacity
-                              style={styles.unitHeader}
-                              onPress={() => toggleUnit(unitKey)}
-                              activeOpacity={0.85}
-                            >
-                              <View style={styles.unitIconWrapper}>
+                      return (
+                        <View key={topicKey} style={styles.topicWrap}>
+                          <TouchableOpacity
+                            style={styles.topicHeader}
+                            onPress={() => hasSubs && toggleTopic(topicKey)}
+                            activeOpacity={hasSubs ? 0.8 : 1}
+                          >
+                            <View style={styles.topicDot} />
+                            <Text style={styles.topicTitle}>{topic.name}</Text>
+                            {hasSubs && (
+                              <>
+                                <View style={styles.countChip}>
+                                  <Text style={styles.countChipText}>{subs.length}</Text>
+                                </View>
                                 <Feather
-                                  name="book-open"
+                                  name={topicOpen ? "chevron-up" : "chevron-down"}
                                   size={16}
-                                  color="#16A673"
+                                  color={MUTED}
                                 />
-                              </View>
-                              <Text style={styles.unitTitle}>{unit.name}</Text>
-                              <Feather
-                                name={
-                                  isUnitOpen ? "chevron-up" : "chevron-down"
-                                }
-                                size={16}
-                                color="#9CA3AF"
-                              />
-                            </TouchableOpacity>
+                              </>
+                            )}
+                          </TouchableOpacity>
 
-                            {isUnitOpen &&
-                              unit.topics?.map(
-                                (topic: any, topicIndex: number) => {
-                                  const topicKey = `${unitKey}-${topicIndex}`;
-                                  const isTopicOpen = expandedTopics[topicKey];
-
-                                  return (
-                                    <View
-                                      key={topicKey}
-                                      style={styles.topicWrapper}
-                                    >
-                                      <TouchableOpacity
-                                        style={styles.topicHeader}
-                                        onPress={() => toggleTopic(topicKey)}
-                                        activeOpacity={0.85}
-                                      >
-                                        <View style={styles.topicDot} />
-                                        <Text style={styles.topicTitle}>
-                                          {topic.name}
-                                        </Text>
-                                        <Feather
-                                          name={
-                                            isTopicOpen
-                                              ? "chevron-up"
-                                              : "chevron-down"
-                                          }
-                                          size={13}
-                                          color="#9CA3AF"
-                                        />
-                                      </TouchableOpacity>
-
-                                      {isTopicOpen && (
-                                        <View style={styles.subTopicList}>
-                                          {topic.subTopics?.map(
-                                            (
-                                              subTopic: any,
-                                              subIndex: number,
-                                            ) => (
-                                              <View
-                                                key={subIndex}
-                                                style={styles.subTopicRow}
-                                              >
-                                                <View
-                                                  style={styles.subTopicDash}
-                                                />
-                                                <Text
-                                                  style={styles.subTopicText}
-                                                >
-                                                  {subTopic.name}
-                                                </Text>
-                                              </View>
-                                            ),
-                                          )}
-                                        </View>
-                                      )}
-                                    </View>
-                                  );
-                                },
-                              )}
-                          </View>
-                        );
-                      })}
-                    </View>
-                  )}
+                          {topicOpen && hasSubs && (
+                            <View style={styles.subList}>
+                              {subs.map((s: any, si: number) => (
+                                <View key={si} style={styles.subRow}>
+                                  <View style={styles.subDash} />
+                                  <Text style={styles.subText}>
+                                    {typeof s === "string" ? s : s.name}
+                                  </Text>
+                                </View>
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })}
                 </View>
               );
             })}
@@ -417,219 +416,295 @@ export default function Roadmap() {
   );
 }
 
+/* ---------------- small components ---------------- */
+
+function Tip({ icon, text }: { icon: keyof typeof Feather.glyphMap; text: string }) {
+  return (
+    <View style={styles.tipRow}>
+      <View style={styles.tipIcon}>
+        <Feather name={icon} size={15} color={GREEN} />
+      </View>
+      <Text style={styles.tipText}>{text}</Text>
+    </View>
+  );
+}
+
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <View style={styles.stat}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+/* ---------------- styles ---------------- */
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FFFFFF" },
-  container: { flex: 1 },
-  scrollContent: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40 },
-  header: { display: "flex", alignItems: "flex-end", marginBottom: 24 },
-  logoBox: {
-    width: 56,
-    height: 56,
+  scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 48 },
+
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    marginBottom: 22,
+  },
+  title: { fontSize: 28, fontWeight: "800", color: GREEN_DARK },
+  subtitle: { marginTop: 4, fontSize: 14, lineHeight: 20, color: MUTED },
+  allBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: GREEN_TINT,
+    marginTop: 4,
+  },
+  allText: { fontSize: 13, fontWeight: "600", color: GREEN_DARK },
+
+  /* upload */
+  uploadCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: GREEN_DARK,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  dropZone: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 34,
     borderRadius: 16,
-    backgroundColor: "#16A673",
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: GREEN,
+    backgroundColor: "#F5FBF8",
+  },
+  uploadIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: GREEN_TINT,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
   },
-  title: { fontSize: 22, fontWeight: "700", color: "#111827", marginBottom: 4 },
-  subtitle: { fontSize: 14, color: "#6B7280", textAlign: "center" },
+  dropTitle: { fontSize: 16, fontWeight: "700", color: GREEN_DARK },
+  dropText: { marginTop: 4, fontSize: 13, color: MUTED },
 
-  form: {
-    width: "100%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+  stateBox: { alignItems: "center", paddingVertical: 30, paddingHorizontal: 10 },
+  stateTitle: { marginTop: 16, fontSize: 17, fontWeight: "700", color: GREEN_DARK },
+  stateText: {
+    marginTop: 6,
+    fontSize: 13,
+    lineHeight: 19,
+    color: MUTED,
+    textAlign: "center",
   },
-
-  fieldGroup: { marginBottom: 18 },
-  labelWithIcon: {
+  filePill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginBottom: 8,
-  },
-  labelText: { fontSize: 13, fontWeight: "600", color: "#374151" },
-  input: {
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 16,
-    fontSize: 15,
-    color: "#111827",
-  },
-
-  uploadBox: {
-    backgroundColor: "#F3F4F6",
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "#E5E7EB",
-    borderStyle: "dashed",
-    paddingVertical: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  uploadBoxDisabled: {
-    opacity: 0.55,
-  },
-  uploadIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#E7F6F0",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-  uploadIconWrapperDisabled: {
-    backgroundColor: "#EEF0F2",
-  },
-  uploadTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 4,
-    maxWidth: "90%",
-  },
-  uploadSubtitle: { fontSize: 12, color: "#9CA3AF" },
-
-  loadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 6,
-    gap: 8,
-  },
-  loadingText: { fontSize: 13, color: "#6B7280", fontWeight: "500" },
-
-  errorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 6,
-    gap: 8,
-    backgroundColor: "#FEF2F2",
-    borderRadius: 10,
-    padding: 12,
-  },
-  errorText: { fontSize: 13, color: "#DC2626", flex: 1 },
-
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 28,
-    marginBottom: 16,
-  },
-  dividerLine: { flex: 1, height: 1, backgroundColor: "#E5E7EB" },
-  dividerText: {
-    marginHorizontal: 12,
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#9CA3AF",
-    letterSpacing: 0.5,
-  },
-  resultsSection: { width: "100%" },
-
-  cardWrapper: { marginBottom: 12 },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  cardIconWrapper: {
-    width: 40,
-    height: 40,
+    marginTop: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: "#E7F6F0",
+    backgroundColor: GREEN_TINT,
+    maxWidth: "100%",
+  },
+  filePillText: { fontSize: 12, fontWeight: "600", color: GREEN_DARK, flexShrink: 1 },
+
+  fileRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 14,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: "#F7FBF9",
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  fileIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    backgroundColor: GREEN_TINT,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
   },
-  cardTextWrapper: { flex: 1 },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 2,
-  },
-  cardDescription: { fontSize: 13, color: "#6B7280", marginBottom: 4 },
-  cardMeta: { fontSize: 12, fontWeight: "600", color: "#16A673" },
+  fileName: { fontSize: 14, fontWeight: "600", color: "#17201C" },
+  fileSize: { marginTop: 2, fontSize: 12, color: MUTED },
 
-  expandedPanel: { marginTop: 10, gap: 10 },
+  errorBox: {
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FAD4D4",
+  },
+  errorTop: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
+  errorText: { flex: 1, fontSize: 13, lineHeight: 19, color: "#B42318" },
+  retryBtn: {
+    marginTop: 12,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: DANGER,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  retryText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+
+  /* tips */
+  tips: { marginTop: 22, gap: 12 },
+  tipRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  tipIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: GREEN_TINT,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tipText: { flex: 1, fontSize: 13, lineHeight: 18, color: MUTED },
+
+  /* result */
+  successBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  successText: { fontSize: 15, fontWeight: "700", color: GREEN_DARK },
+  resultCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderLeftWidth: 5,
+    borderLeftColor: GREEN,
+    shadowColor: GREEN_DARK,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  resultTitle: { fontSize: 20, fontWeight: "800", color: GREEN_DARK },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+    marginBottom: 18,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: "#F5FBF8",
+  },
+  stat: { flex: 1, alignItems: "center" },
+  statValue: { fontSize: 22, fontWeight: "800", color: GREEN },
+  statLabel: { marginTop: 2, fontSize: 12, color: MUTED },
+  statDivider: { width: 1, height: 28, backgroundColor: BORDER },
+
+  primaryBtn: {
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: GREEN,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  secondaryBtn: { height: 44, alignItems: "center", justifyContent: "center", marginTop: 4 },
+  secondaryBtnText: { fontSize: 14, fontWeight: "600", color: GREEN },
+
+  sectionLabel: {
+    marginTop: 26,
+    marginBottom: 12,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    color: MUTED,
+  },
+
+  /* tree */
   unitCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: BORDER,
+    marginBottom: 10,
     overflow: "hidden",
   },
   unitHeader: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
     padding: 14,
-    gap: 10,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#F7FBF9",
   },
-  unitIconWrapper: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#E7F6F0",
+  unitBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
-  unitTitle: { flex: 1, fontSize: 14, fontWeight: "600", color: "#111827" },
-  topicWrapper: {
+  unitBadgeText: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  unitTitle: { fontSize: 15, fontWeight: "700", color: GREEN_DARK },
+  unitMeta: { marginTop: 2, fontSize: 12, color: MUTED },
+
+  topicWrap: {
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    borderTopColor: "#EEF5F1",
     paddingHorizontal: 14,
   },
   topicHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 11,
     gap: 10,
+    paddingVertical: 12,
   },
-  topicDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#16A673",
-    marginLeft: 4,
-  },
-  topicTitle: { flex: 1, fontSize: 13, fontWeight: "500", color: "#374151" },
-  subTopicList: { paddingLeft: 24, paddingBottom: 12, gap: 7 },
-  subTopicRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
-  subTopicDash: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#9CA3AF",
-    marginTop: 7,
-  },
-  subTopicText: { flex: 1, fontSize: 12.5, color: "#6B7280", lineHeight: 18 },
-  allBtn: {
-    backgroundColor: "#16A673",
-    height: 40,
-    padding: 10,
-    display: "flex",
-    justifyContent: "center",
-    textAlign: "center",
+  topicDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: GREEN },
+  topicTitle: { flex: 1, fontSize: 14, fontWeight: "600", color: "#25302B" },
+  countChip: {
+    minWidth: 24,
+    height: 20,
+    paddingHorizontal: 7,
     borderRadius: 10,
+    backgroundColor: GREEN_TINT,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  allText: {
-    color: "#FFFFFF",
+  countChipText: { fontSize: 11, fontWeight: "700", color: GREEN_DARK },
+
+  subList: {
+    marginLeft: 3,
+    paddingLeft: 14,
+    paddingBottom: 12,
+    gap: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: GREEN_TINT,
   },
+  subRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  subDash: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#A9B8B1",
+    marginTop: 8,
+  },
+  subText: { flex: 1, fontSize: 13, lineHeight: 20, color: "#4A5A53" },
 });
