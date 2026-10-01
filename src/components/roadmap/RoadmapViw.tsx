@@ -126,7 +126,7 @@ function SubTopicRow({
   );
 }
 
-/* ---------- Topic ---------- */
+
 function TopicItem({
   topic,
   onToggle,
@@ -140,41 +140,48 @@ function TopicItem({
   onToggleSubTopic: (subTopicId: string) => void;
   onDeleteSubTopic: (subTopicId: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const hasSubs = topic.subTopics.length > 0;
+  // Start expanded so subtopics are visible right away. Use false to start collapsed.
+  const [open, setOpen] = useState(true);
+
+  // TEMP DEBUG: check Metro logs. If this prints [] or undefined, the problem is your data, not the UI.
+  // console.log("TopicItem:", topic.name, topic.subTopics);
+
+  const subs = topic.subTopics ?? [];
+  const hasSubs = subs.length > 0;
+  const doneSubs = subs.filter((s) => s.completed).length;
   const done = isTopicDone(topic);
   const state = done ? "checked" : isTopicPartial(topic) ? "partial" : "none";
+
+  const toggleOpen = () => {
+    animate();
+    setOpen(!open);
+  };
 
   return (
     <View style={styles.topicCard}>
       <View style={styles.topicHeader}>
         <Checkbox state={state} onPress={onToggle} />
-        <Text
-          style={[styles.topicText, done && styles.doneText]}
-          onPress={() => {
-            if (hasSubs) {
-              animate();
-              setOpen(!open);
-            }
-          }}
+        <TouchableOpacity
+          style={styles.topicTitleWrap}
+          onPress={hasSubs ? toggleOpen : onToggle}
+          activeOpacity={0.7}
         >
-          {topic.name}
-        </Text>
+          <Text style={[styles.topicText, done && styles.doneText]}>
+            {topic.name}
+          </Text>
+          {hasSubs && (
+            <Text style={styles.topicMeta}>
+              {doneSubs}/{subs.length} subtopics
+            </Text>
+          )}
+        </TouchableOpacity>
+        {hasSubs && <Chevron open={open} onPress={toggleOpen} />}
         <DeleteButton onPress={() => confirmDelete(topic.name, onDelete)} />
-        {hasSubs && (
-          <Chevron
-            open={open}
-            onPress={() => {
-              animate();
-              setOpen(!open);
-            }}
-          />
-        )}
       </View>
 
       {open && hasSubs && (
         <View style={styles.subList}>
-          {topic.subTopics.map((s) => (
+          {subs.map((s) => (
             <SubTopicRow
               key={s.id}
               subTopic={s}
@@ -187,6 +194,7 @@ function TopicItem({
     </View>
   );
 }
+
 
 /* ---------- Unit ---------- */
 function UnitCard({ unit, props }: { unit: Unit; props: RoadmapViewProps }) {
@@ -249,7 +257,6 @@ function UnitCard({ unit, props }: { unit: Unit; props: RoadmapViewProps }) {
   );
 }
 
-/* ---------- Main ---------- */
 export default function RoadmapView(props: RoadmapViewProps) {
   const { roadmap } = props;
   const allTopics = roadmap.units.flatMap((u) => u.topics);
@@ -359,4 +366,6 @@ const styles = StyleSheet.create({
   },
   checkboxOn: { backgroundColor: GREEN },
   deleteBtn: { padding: 2 },
+  topicTitleWrap: { flex: 1 },
+  topicMeta: { fontSize: 12, color: MUTED, marginTop: 2 },
 });
