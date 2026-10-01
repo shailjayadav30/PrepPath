@@ -59,7 +59,7 @@ export default function AllRoadmap() {
         const cookie = await authClient.getCookie();
 
         const response = await fetch(
-          `${process.env.EXPO_PUBLIC_BASE_URL}/api/syllabus`,
+          `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap`,
           {
             method: "GET",
             headers: {
@@ -74,6 +74,7 @@ export default function AllRoadmap() {
         }
 
         const data = await response.json();
+
 
         if (!cancelled) {
           setRoadmapList(data.roadmap ?? []);

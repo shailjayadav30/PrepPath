@@ -33,12 +33,14 @@ export default function RoadmapCard({ roadmap, onPress, onDelete }: Prop) {
           </View>
         </View>
 
-        <TouchableOpacity onPress={onDelete} hitSlop={10} activeOpacity={0.7}>
-          <Ionicons name="trash-outline" size={21} color="#C45B5B" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onDelete} hitSlop={10} activeOpacity={0.7}>
-          <Text>active</Text>
-        </TouchableOpacity>
+        <View style={styles.delAct}>
+          <TouchableOpacity onPress={onDelete} hitSlop={10} activeOpacity={0.7}>
+            <Ionicons name="trash-outline" size={21} color="#C45B5B" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onDelete} hitSlop={10} activeOpacity={0.7}>
+            <Text>active</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Divider */}
@@ -175,5 +177,10 @@ const styles = StyleSheet.create({
   footerText: {
     color: "#8A9690",
     fontSize: 12,
+  },
+  delAct: {
+    flexDirection: "column",
+    gap:10,
+    alignItems:"center"
   },
 });

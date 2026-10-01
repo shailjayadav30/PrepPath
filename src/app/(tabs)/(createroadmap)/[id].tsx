@@ -1,5 +1,3 @@
-
-
 import { authClient } from "@/lib/auth-client";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -7,7 +5,6 @@ import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Roadmap } from "../../../../types/roadmapTypes";
 import RoadmapView from "@/components/roadmap/RoadmapViw";
-
 
 export default function RoadmapDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -18,7 +15,7 @@ export default function RoadmapDetail() {
       const cookie = await authClient.getCookie();
       const res = await fetch(
         `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap/${id}`,
-        { headers: { Cookie: cookie ?? "" } },
+        { method: "GET", headers: { Cookie: cookie ?? "" } },
       );
       const data = await res.json();
       setRoadmap(data.roadmap);
