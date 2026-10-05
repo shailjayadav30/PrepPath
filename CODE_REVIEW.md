@@ -10,68 +10,72 @@ Fixes are grouped by priority. Each item lists the file, the problem, and the fi
 
 ## 1. Bugs (fix first)
 
-### 1.1 Users get stuck after onboarding
-**Files:** [src/app/_layout.tsx](src/app/_layout.tsx), [src/app/(onboarding)/onboarding2.tsx](src/app/(onboarding)/onboarding2.tsx)
-
-`RootLayout` reads `hasOnboarded` from AsyncStorage **once** on mount. `finishOnboarding()` writes `"true"` to storage, but the root layout's state stays `false`. So the `Stack.Protected guard={!!hasOnboarded && !isLoggedIn}` around `sign-in` is still closed, and `router.replace("/sign-in")` is blocked. The user can't get past onboarding until they restart the app.
-
-**Fix:** keep the flag in shared state that both screens can update, such as a small React context (`OnboardingProvider` with `hasOnboarded` + `completeOnboarding()`) or a Zustand store. `completeOnboarding()` writes to storage **and** updates state. After that the protected guard opens, and Expo Router redirects on its own, so no manual `router.replace` is needed.
-
 ### 1.2 Tapping "active" deletes the roadmap
-**File:** [src/components/ui/RoadmapCard.tsx:40-42](src/components/ui/RoadmapCard.tsx#L40-L42)
+
+**File:** [src/components/ui/RoadmapCard.	tsx:40-42](src/components/ui/RoadmapCard.tsx#L40-L42)
 
 The `"active"` text button is wired to `onPress={onDelete}`. The trash icon also deletes **with no confirmation**.
 **Fix:** remove or rewire the "active" button (probably meant to toggle `isFollowing`), and add a confirm dialog before deleting (you already have `confirmDelete` in `RoadmapViw.tsx`).
 
 ### 1.3 Subtopic delete always "succeeds" in the UI
+
 **File:** [src/app/(tabs)/(createroadmap)/[id].tsx:103-153](src/app/(tabs)/(createroadmap)/[id].tsx#L103-L153)
 
 - `response.json()` is not awaited (it logs a Promise).
 - `if (!response)` is never true because `fetch` always returns a Response. A 4xx/5xx is treated as success, so the subtopic disappears locally but still exists on the server.
 
 **Fix:** match `deleteUnit`:
+
 ```ts
 const data = await response.json();
 if (!response.ok) throw new Error(data.message || "Failed to delete subtopic");
 ```
+
 Also remove the dead `if (!response)` block in `deleteTopic` (line 79).
 
 ### 1.4 Roadmap detail screen spins forever on error
+
 **File:** [src/app/(tabs)/(createroadmap)/[id].tsx:13-23](src/app/(tabs)/(createroadmap)/[id].tsx#L13-L23)
 
 No `try/catch`, no `res.ok` check, no error state. If the request fails (network, 404, expired session), `roadmap` stays `null` and the spinner never stops. There's also an unhandled promise rejection.
 **Fix:** add `error` state, check `res.ok`, show an error and a retry button, and ignore the result after unmount (like `allRoadmap.tsx` does with `cancelled`).
 
 ### 1.5 Completion progress is never saved
+
 **File:** [src/app/(tabs)/(createroadmap)/[id].tsx:223-237](src/app/(tabs)/(createroadmap)/[id].tsx#L223-L237)
 
 Checking units, topics, and subtopics only updates local state (three `TODO: PATCH` comments). Progress is lost when the user leaves the screen. This is the app's main feature.
 **Fix:** call the PATCH endpoints. Update the UI first, then roll back and show an error if the request fails.
 
 ### 1.6 Sign-out goes to a route that doesn't exist
+
 **File:** [src/app/(tabs)/settings.tsx:81](src/app/(tabs)/settings.tsx#L81)
 
 `router.replace("/(auth)/login")`: there is no `(auth)` group or `login` route.
 **Fix:** delete the line. Once the session is cleared, `Stack.Protected` in the root layout redirects to `sign-in` on its own.
 
 ### 1.7 "Sign in" link on the sign-up page goes to the wrong screen
+
 **File:** [src/app/sign-up.tsx:156](src/app/sign-up.tsx#L156)
 
 `router.push("/(tabs)")` should be `router.replace("/sign-in")` (or `router.back()`).
 
 ### 1.8 Home screen can stay stuck on loading
+
 **File:** [src/app/(tabs)/index.tsx:32-56](src/app/(tabs)/index.tsx#L32-L56)
 
 If `userId` is undefined, `getRoadmap` returns before `finally`, so `loading` stays `true`. A failed fetch only logs to the console, and the user sees "No roadmap yet", which is misleading.
 **Fix:** set `loading=false` on the early return, add an error state, and show an error message.
 
 ### 1.9 Home list doesn't refresh after creating or deleting a roadmap
+
 **Files:** [src/app/(tabs)/index.tsx](src/app/(tabs)/index.tsx), [src/app/(tabs)/(createroadmap)/allRoadmap.tsx](src/app/(tabs)/(createroadmap)/allRoadmap.tsx)
 
 Data loads once on mount, and tabs stay mounted. A newly created roadmap won't appear on Home until the user pulls to refresh.
 **Fix:** refetch with `useFocusEffect` from `expo-router`, or (better, see 2.2) use TanStack Query and invalidate the query after create or delete.
 
 ### 1.10 Profile photo is never saved
+
 **Files:** [src/app/(tabs)/settings.tsx:71](src/app/(tabs)/settings.tsx#L71), [src/components/ui/ImagePicker.tsx](src/components/ui/ImagePicker.tsx)
 
 - The picked photo lives only in local `useState`. It isn't uploaded or saved to the user record, so it's lost on restart.
@@ -84,9 +88,11 @@ Data loads once on mount, and tabs stay mounted. A newly created roadmap won't a
 ## 2. Architecture and code organization
 
 ### 2.1 Put all API calls in one helper
-The same pattern (`authClient.getCookie()` → `fetch(\`${process.env.EXPO_PUBLIC_BASE_URL}/api/...\`, { headers: { Cookie } })` → manual `ok` check) is copied in **7 places** across `index.tsx`, `allRoadmap.tsx`, `[id].tsx`, and `(createroadmap)/index.tsx`, and each copy handles errors differently.
+
+The same pattern (`authClient.getCookie()` → `fetch(\`${process.env.EXPO_PUBLIC_BASE_URL}/api/...\`, { headers: { Cookie } })`→ manual`ok`check) is copied in **7 places** across`index.tsx`, `allRoadmap.tsx`, `[id].tsx`, and `(createroadmap)/index.tsx`, and each copy handles errors differently.
 
 Create `src/lib/api.ts`:
+
 ```ts
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 if (!BASE_URL) throw new Error("EXPO_PUBLIC_BASE_URL is not set");
@@ -103,34 +109,39 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   return body as T;
 }
 ```
+
 Then add typed functions on top: `getFollowingRoadmaps()`, `getRoadmap(id)`, `deleteUnit(id)`, and so on.
 (Note: browsers don't allow setting a `Cookie` header, so on web you need `credentials: "include"`, as the upload code already does.)
 
 ### 2.2 Use a data-fetching library
+
 Every screen manages `loading` / `error` / `refreshing` / `cancelled` by hand. **TanStack Query** (`@tanstack/react-query`) gives you caching, refetch on focus, retries, optimistic updates (for 1.5), and invalidation (for 1.9), and removes most of that boilerplate.
 
-### 2.3 Remove duplicated onboarding and session logic
-[src/app/index.tsx](src/app/index.tsx) and [src/app/_layout.tsx](src/app/_layout.tsx) both read `hasOnboarded` from AsyncStorage and both check the session. With `Stack.Protected`, the root layout already controls access. Keep one source of truth (the context from 1.1) and make `index.tsx` a plain redirect, or remove it.
-
 ### 2.4 Move `types/` into `src/` (or add an alias)
+
 `types/` is outside `src/`, but `@/*` only points to `./src/*`, so files import `../../../../types/roadmapTypes`. Move it to `src/types/` and import `@/types/roadmap`.
 Also:
+
 - `getInitials` is a utility, not a type. Move it to `src/lib/utils.ts`.
 - Component prop types (`TopicCardProps`, `SubTopicItemProps`, …) belong next to their components.
 
 ### 2.5 Centralize colors and theme
+
 Every screen redefines `GREEN`, `GREEN_DARK`, `GREEN_TINT`, `MUTED`, `DANGER`, and `MUTED` has **4 different values** (`#5F6F68`, `#7A837F`, `#6B7A73`, `#789083`). Meanwhile [src/constants/theme.ts](src/constants/theme.ts) and the `useTheme` hook (from the Expo template) aren't used by any real screen.
 **Fix:** define one palette in `src/constants/theme.ts` (light + dark) and import it everywhere.
 
 ### 2.6 Dark mode is half-enabled
+
 `app.json` has `"userInterfaceStyle": "automatic"`, and the root layout switches to `DarkTheme`, but every screen hardcodes a white background and dark text. In dark mode the tab bar and navigation turn dark while the content stays white.
 **Fix:** either set `"userInterfaceStyle": "light"` for now, or use theme colors (2.5) on every screen.
 
 ### 2.7 Reuse shared UI pieces
+
 - [sign-in.tsx](src/app/sign-in.tsx) and [sign-up.tsx](src/app/sign-up.tsx) have **identical ~200-line StyleSheets**, including unused styles (`checkbox*`, `ssoButton*`). Extract `AuthHeader`, `FormField`, `PasswordInput`, and `PrimaryButton` components.
 - The two onboarding screens also duplicate their styles. Use one `OnboardingSlide` component, or one screen with a horizontal pager.
 
 ### 2.8 Smaller component cleanups
+
 - [RoadmapViw.tsx](src/components/roadmap/RoadmapViw.tsx): fix the filename typo (`RoadmapView.tsx`). `UnitCard({ unit, props })` passes the whole props object as a prop named `props`; pass only the callbacks it needs.
 - [ImagePicker.tsx](src/components/ui/ImagePicker.tsx): rename `ImagePickerExample` → `AvatarPicker`. Copying the `uri` prop into state with `useEffect` is a known anti-pattern; use the prop directly (controlled component). The `setTimeout(action, 250)` modal workaround is fragile; use the Modal's `onDismiss` (iOS) or start the picker after the close animation.
 - Use `expo-image`'s `Image` everywhere (`ImagePicker.tsx` uses the React Native `Image`, while `homeHeader.tsx` uses `expo-image`).
@@ -141,17 +152,21 @@ Every screen redefines `GREEN`, `GREEN_DARK`, `GREEN_TINT`, `MUTED`, `DANGER`, a
 ## 3. TypeScript and type safety
 
 ### 3.1 Type check fails
+
 ```
 src/lib/roadmapHelpers.ts(1,10): error TS2305: Module has no exported member 'Subject'.
 src/lib/roadmapHelpers.ts(62,26): error TS7006: Parameter 'unit' implicitly has an 'any' type.
 ```
+
 `roadmapHelpers.ts` isn't imported anywhere. Delete it (see 4).
 
 ### 3.2 Remove `any`
+
 [(createroadmap)/index.tsx](src/app/(tabs)/(createroadmap)/index.tsx) uses `any` for `roadmap`, `units`, topics, subtopics, the upload response, and `catch (err: any)`. Use the `Roadmap` type (and a `GenerateRoadmapResponse` type). In `catch`, use `err instanceof Error ? err.message : ...`.
 The preview also handles `typeof s === "string" ? s : s.name`, a sign the API response shape isn't defined. Agree on one shape with the backend and type it.
 
 ### 3.3 Make API response keys consistent
+
 - `GET /api/roadmap/isfollowing` → `data.roadmaps`
 - `GET /api/roadmap` → `data.roadmap` (an array, singular name)
 - `GET /api/roadmap/:id` → `data.roadmap`
@@ -159,32 +174,35 @@ The preview also handles `typeof s === "string" ? s : s.name`, a sign the API re
 Fix the naming on the backend, or at least type each response so a mistake is a compile error.
 
 ### 3.4 Avoid non-null assertions
+
 In `[id].tsx`, `find(...)!` and `value!` will crash if an id goes stale (for example after a delete). Handle `undefined`.
 
 ### 3.5 Make sure typed routes work
+
 `experiments.typedRoutes` is on, yet `router.replace("/(auth)/login")` (1.6) passed `tsc`. Run `npx expo start` once (or `npx expo customize tsconfig.json`) so `.expo/types` is generated, then re-run `tsc`. It should catch invalid hrefs.
 
 ### 3.6 Don't import Expo Router internals
+
 [sign-in.tsx:14](src/app/sign-in.tsx#L14): `import { Button } from "expo-router/build/react-navigation"`. This is an internal path that can break on any update, and it's unused. Remove it. Line 15 also imports `router` and then shadows it with `const router = useRouter()`.
 
 ---
 
 ## 4. Dead code to delete
 
-| File | Why |
-|---|---|
-| `src/lib/roadmapHelpers.ts` | Not imported; breaks `tsc` |
-| `src/components/roadmap/TopicCard.tsx` | Not imported (replaced by `RoadmapViw.tsx`) |
-| `src/components/roadmap/SubTopicItem.tsx`, `RoadmapSectionHeader.tsx`, `RoadmapCheckBox.tsx` | Only used by `TopicCard` |
-| `UnitCardProps`, `TopicCardProps`, `SubTopicItemProps`, `RoadmapSectionHeaderProps`, `RoadmapCheckBoxProps` in `types/roadmapTypes.ts` | Only used by the files above |
-| `src/components/ui/timer.tsx` | Placeholder; lowercase name (`timer`) isn't a valid component name |
-| `src/components/ui/Collapsiblee.tsx` | Unused (typo in name) |
-| `src/components/app-tabs.tsx`, `app-tabs.web.tsx`, `hint-row.tsx`, `web-badge.tsx`, `external-link.tsx`, `animated-icon*.tsx/.css` | Expo template leftovers, unused |
-| `src/components/themed-text.tsx`, `themed-view.tsx`, `src/hooks/use-theme.ts` | Only used by the template files above (keep them if you adopt them in 2.5) |
-| `src/components/social-sign-in.tsx` | Placeholder that renders the text "social-sign-in" inside the sign-up page's Google button |
-| `scripts/reset-project.js` + `reset-project` npm script | Template script; running it would move `src/` away |
-| `.github/modernize/java-upgrade/` | Unrelated leftover from a VS Code Java extension |
-| Large commented-out blocks in `_layout.tsx`, `index.tsx`, `sign-up.tsx`, `social-sign-in.tsx`, `[id].tsx`, `RoadmapViw.tsx` | Git keeps the history; delete them |
+| File                                                                                                                                               | Why                                                                                        |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `src/lib/roadmapHelpers.ts`                                                                                                                      | Not imported; breaks`tsc`                                                                |
+| `src/components/roadmap/TopicCard.tsx`                                                                                                           | Not imported (replaced by`RoadmapViw.tsx`)                                               |
+| `src/components/roadmap/SubTopicItem.tsx`, `RoadmapSectionHeader.tsx`, `RoadmapCheckBox.tsx`                                                 | Only used by`TopicCard`                                                                  |
+| `UnitCardProps`, `TopicCardProps`, `SubTopicItemProps`, `RoadmapSectionHeaderProps`, `RoadmapCheckBoxProps` in `types/roadmapTypes.ts` | Only used by the files above                                                               |
+| `src/components/ui/timer.tsx`                                                                                                                    | Placeholder; lowercase name (`timer`) isn't a valid component name                       |
+| `src/components/ui/Collapsiblee.tsx`                                                                                                             | Unused (typo in name)                                                                      |
+| `src/components/app-tabs.tsx`, `app-tabs.web.tsx`, `hint-row.tsx`, `web-badge.tsx`, `external-link.tsx`, `animated-icon*.tsx/.css`     | Expo template leftovers, unused                                                            |
+| `src/components/themed-text.tsx`, `themed-view.tsx`, `src/hooks/use-theme.ts`                                                                | Only used by the template files above (keep them if you adopt them in 2.5)                 |
+| `src/components/social-sign-in.tsx`                                                                                                              | Placeholder that renders the text "social-sign-in" inside the sign-up page's Google button |
+| `scripts/reset-project.js` + `reset-project` npm script                                                                                        | Template script; running it would move`src/` away                                        |
+| `.github/modernize/java-upgrade/`                                                                                                                | Unrelated leftover from a VS Code Java extension                                           |
+| Large commented-out blocks in`sign-up.tsx`, `social-sign-in.tsx`, `[id].tsx`, `RoadmapViw.tsx`                                             | Git keeps the history; delete them                                                         |
 
 Also: `ErrorBoundary.tsx` exists but is commented out. Either use it (see 6.3) or use Expo Router's built-in `export function ErrorBoundary` in `_layout.tsx`.
 
@@ -200,29 +218,33 @@ Also: `ErrorBoundary.tsx` exists but is commented out. Either use it (see 6.3) o
 - **Typos:** "loogging", "Allready", `TabseLayout`.
 - **Keyboard covers inputs** on small screens. Wrap the form in `KeyboardAvoidingView` / `ScrollView` with `keyboardShouldPersistTaps="handled"`.
 - Add `textContentType` / `autoComplete` (`email`, `password`, `new-password`, `name`) so password managers and autofill work.
-- **Onboarding "Skip"** just jumps to slide 2 (and uses `replace` while "Next" uses `push`). Skip should finish onboarding.
 
 ---
 
 ## 6. Security and logging
 
 ### 6.1 Remove `console.log` of sensitive data
+
 - `sign-in.tsx:34` logs `data` (user and session token) on every login.
 - `sign-up.tsx:31,36` logs the full error and user object.
 - Overall there are 18 `console.*` calls across the screens. Remove them, or wrap them in `if (__DEV__)` / a small logger.
 
 ### 6.2 Don't show raw errors to users
+
 `sign-up.tsx:32` shows `Alert.alert(..., JSON.stringify(error))`, which displays raw JSON. Show `error.message`, or map known error codes to friendly text.
 
 ### 6.3 Hide stack traces in production
+
 `ErrorBoundary.tsx` renders `error.stack` to the user. Show it only `if (__DEV__)`, and show a friendly "Something went wrong" + retry in production.
 
 ### 6.4 Environment variables
+
 - `EXPO_PUBLIC_*` values are bundled into the app in plain text. Fine for the base URL, but never put secrets there.
 - Check `EXPO_PUBLIC_BASE_URL` once at startup (see 2.1). Today, if it's missing, requests silently go to `"undefined/api/..."`.
 - Add a committed `.env.example` that lists the required variables.
 
 ### 6.5 Upload hardening
+
 [(createroadmap)/index.tsx:72-109](src/app/(tabs)/(createroadmap)/index.tsx#L72-L109): set `xhr.timeout` (for example 120s) and `xhr.ontimeout`, since generation "can take up to a minute". Consider aborting the request on unmount. The web branch shows a generic error and drops the server's `message`, unlike the native branch.
 
 ---
@@ -264,7 +286,7 @@ Also: `ErrorBoundary.tsx` exists but is commented out. Either use it (see 6.3) o
 
 ## Suggested order of work
 
-1. Bugs 1.1 – 1.7 (quick fixes; 1.1 and 1.2 can lose user data or block users).
+1. Bugs 1.2 – 1.7 (quick fixes; 1.2 can delete user data).
 2. Delete dead code (section 4) → `tsc` passes.
 3. Add `src/lib/api.ts` (2.1), then TanStack Query (2.2). This fixes 1.4, 1.8, 1.9 almost automatically.
 4. Save progress (1.5) with optimistic updates.
