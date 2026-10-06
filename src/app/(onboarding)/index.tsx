@@ -2,14 +2,17 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useOnboarding } from "@/components/OnboardingProvider";
 
 export default function Onboarding1() {
+  const { completeOnboarding } = useOnboarding();
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Skip */}
         <View style={styles.topRow}>
-          <TouchableOpacity onPress={() => router.replace("/(onboarding)/onboarding2")}>
+          <TouchableOpacity onPress={completeOnboarding}>
             <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
         </View>

@@ -1,13 +1,10 @@
-
-
 import { authClient } from "@/lib/auth-client";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Roadmap } from "../../../../types/roadmapTypes";
 import RoadmapView from "@/components/roadmap/RoadmapViw";
-
 
 export default function RoadmapDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -18,13 +15,64 @@ export default function RoadmapDetail() {
       const cookie = await authClient.getCookie();
       const res = await fetch(
         `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap/${id}`,
-        { headers: { Cookie: cookie ?? "" } },
+        { method: "GET", headers: { Cookie: cookie ?? "" } },
       );
       const data = await res.json();
       setRoadmap(data.roadmap);
     })();
   }, [id]);
 
+  const deleteSubTopic = async (
+    unitId: string,
+    topicId: string,
+    subTopicId: string,
+  ) => {
+    try {
+      console.log("subTopicId", subTopicId);
+      const cookie = await authClient.getCookie();
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_BASE_URL}/api/subTopics/${subTopicId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Cookie: cookie ?? "",
+          },
+        },
+      );
+      console.log("deleted", response.json());
+      if (!response) {
+        throw new Error("Failed to delete subtopic");
+      }
+
+      setRoadmap((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          units: prev.units.map((unit) =>
+            unit.id !== unitId
+              ? unit
+              : {
+                  ...unit,
+                  topics: unit.topics.map((topic) =>
+                    topic.id !== topicId
+                      ? topic
+                      : {
+                          ...topic,
+                          subTopics: topic.subTopics.filter(
+                            (subTopic) => subTopic.id !== subTopicId,
+                          ),
+                        },
+                  ),
+                },
+          ),
+        };
+      });
+    } catch (error) {
+      console.error("Failed to delete subtopic:", error);
+      Alert.alert("Error", "Failed to delete subtopic. Please try again.");
+    }
+  };
   if (!roadmap) {
     return (
       <View style={{ flex: 1, justifyContent: "center" }}>
@@ -117,40 +165,8 @@ export default function RoadmapDetail() {
             });
             // TODO: DELETE /api/unit/:unitId
           }}
-          onDeleteTopic={(unitId, topicId) => {
-            setRoadmap({
-              ...roadmap,
-              units: roadmap.units.map((u) =>
-                u.id === unitId
-                  ? { ...u, topics: u.topics.filter((t) => t.id !== topicId) }
-                  : u,
-              ),
-            });
-            // TODO: DELETE /api/topic/:topicId
-          }}
-          onDeleteSubTopic={(unitId, topicId, subId) => {
-            setRoadmap({
-              ...roadmap,
-              units: roadmap.units.map((u) =>
-                u.id === unitId
-                  ? {
-                      ...u,
-                      topics: u.topics.map((t) =>
-                        t.id === topicId
-                          ? {
-                              ...t,
-                              subTopics: t.subTopics.filter(
-                                (s) => s.id !== subId,
-                              ),
-                            }
-                          : t,
-                      ),
-                    }
-                  : u,
-              ),
-            });
-            // TODO: DELETE /api/subtopic/:subId
-          }}
+          onDeleteTopic={() => deleteSubTopic}
+          onDeleteSubTopic={deleteSubTopic}
         />
       </ScrollView>
     </SafeAreaView>

@@ -1,14 +1,14 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router } from "expo-router";
+import { useOnboarding } from "@/components/OnboardingProvider";
 
 export default function Onboarding2() {
+  const { completeOnboarding } = useOnboarding();
+
   const finishOnboarding = async () => {
     try {
-      await AsyncStorage.setItem("hasOnboarded", "true");
-      router.replace("/sign-in");
+      await completeOnboarding();
     } catch (err) {
       console.error("Error saving onboarding status:", err);
     }
