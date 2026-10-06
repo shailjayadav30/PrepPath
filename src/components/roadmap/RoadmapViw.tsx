@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { Roadmap, SubTopic, Topic, Unit } from "../../../types/roadmapTypes";
+import { confirmDelete } from "@/lib/confirm";
 
 const GREEN = "#16A673";
 const GREEN_DARK = "#0F5132";
@@ -51,11 +52,7 @@ const isTopicPartial = (t: Topic) =>
 const animate = () =>
   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
-const confirmDelete = (label: string, onConfirm: () => void) =>
-  Alert.alert("Delete", `Delete "${label}"? This cannot be undone.`, [
-    { text: "Cancel", style: "cancel" },
-    { text: "Delete", style: "destructive", onPress: onConfirm },
-  ]);
+
 
 /* ---------- small pieces ---------- */
 function Checkbox({

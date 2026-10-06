@@ -7,9 +7,16 @@ type Prop = {
   roadmap: Roadmap;
   onPress: () => void;
   onDelete?: () => void;
+  // isFollowing?: () => void;
+  onToggleFollow?: () => void;
 };
 
-export default function RoadmapCard({ roadmap, onPress, onDelete }: Prop) {
+export default function RoadmapCard({
+  roadmap,
+  onPress,
+  onDelete,
+  onToggleFollow
+}: Prop) {
   const progress: number = 68;
   return (
     <TouchableOpacity
@@ -37,8 +44,13 @@ export default function RoadmapCard({ roadmap, onPress, onDelete }: Prop) {
           <TouchableOpacity onPress={onDelete} hitSlop={10} activeOpacity={0.7}>
             <Ionicons name="trash-outline" size={21} color="#C45B5B" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onDelete} hitSlop={10} activeOpacity={0.7}>
-            <Text>active</Text>
+          <TouchableOpacity
+            onPress={onToggleFollow}
+            hitSlop={10}
+            activeOpacity={0.7}
+          >
+            <Text>
+            {roadmap.isFollowing ? "Following":"Follow"}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -180,7 +192,7 @@ const styles = StyleSheet.create({
   },
   delAct: {
     flexDirection: "column",
-    gap:10,
-    alignItems:"center"
+    gap: 10,
+    alignItems: "center",
   },
 });

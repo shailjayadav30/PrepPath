@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +15,7 @@ import { Roadmap } from "../../../../types/roadmapTypes";
 import RoadmapCard from "@/components/ui/RoadmapCard";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { confirmDelete } from "@/lib/confirm";
 
 export default function AllRoadmap() {
   const { data: session } = authClient.useSession();
@@ -22,7 +24,7 @@ export default function AllRoadmap() {
   const [roadmapList, setRoadmapList] = useState<Roadmap[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [following, setFollowing] = useState(false);
   const router = useRouter();
   async function deleteRoadmap(roadmapId: string) {
     try {
@@ -37,13 +39,14 @@ export default function AllRoadmap() {
         },
       );
       if (!response.ok) {
-        throw new Error("Failed to fetch Roadmap");
+        throw new Error("Failed to delete Roadmap");
       }
       setRoadmapList((prev) =>
         prev.filter((roadmap) => roadmap.id !== roadmapId),
       );
     } catch (error) {
       console.log("Error in deleting roadmap", error);
+      Alert.alert("Couldn't delete roadmap", "Please try again.");
     }
   }
   useEffect(() => {
@@ -75,7 +78,6 @@ export default function AllRoadmap() {
 
         const data = await response.json();
 
-
         if (!cancelled) {
           setRoadmapList(data.roadmap ?? []);
         }
@@ -99,6 +101,29 @@ export default function AllRoadmap() {
     };
   }, [userId]);
 
+  async function toggleFollow(roadmapId: string) {
+    const flip = () =>
+      setRoadmapList((prev) =>
+        prev.map((r) =>
+          r.id === roadmapId ? { ...r, isFollowing: !r.isFollowing } : r,
+        ),
+      );
+    flip();
+    try {
+      const cookie = await authClient.getCookie();
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap/isfollowing/${roadmapId}`,
+        {
+          method: "PATCH",
+          headers: { Cookie: cookie ?? "" },
+        },
+      );
+      if (!response.ok) throw new Error("Failed to update follow status");
+    } catch (error) {
+      flip();
+      Alert.alert("Couldn't update roadmap", "Please try again");
+    }
+  }
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, styles.center]}>
@@ -117,6 +142,8 @@ export default function AllRoadmap() {
       </SafeAreaView>
     );
   }
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -155,7 +182,10 @@ export default function AllRoadmap() {
             <RoadmapCard
               key={roadmap.id}
               roadmap={roadmap}
-              onDelete={() => deleteRoadmap(roadmap.id)}
+              onToggleFollow={() => toggleFollow(roadmap.id)}
+              onDelete={() =>
+                confirmDelete(roadmap.name, () => deleteRoadmap(roadmap.id))
+              }
               onPress={() =>
                 router.push({
                   pathname: "/(tabs)/(createroadmap)/[id]",
