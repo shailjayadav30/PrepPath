@@ -18,9 +18,9 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-//   useEffect(() => {
-//   Alert.alert("Debug", `BASE_URL is: ${process.env.EXPO_PUBLIC_BASE_URL}`);
-// }, []);
+  //   useEffect(() => {
+  //   Alert.alert("Debug", `BASE_URL is: ${process.env.EXPO_PUBLIC_BASE_URL}`);
+  // }, []);
   const handleSignup = async () => {
     const { data, error } = await authClient.signUp.email({
       email,
@@ -152,8 +152,8 @@ export default function SignUp() {
 
           {/* Sign up */}
           <View style={styles.signUpRow}>
-            <Text style={styles.signUpText}>Allready have an account? </Text>
-            <TouchableOpacity onPress={() => router.push("/(tabs)")}>
+            <Text style={styles.signUpText}>Already have an account?</Text>
+            <TouchableOpacity onPress={() => router.replace("/sign-in")}>
               <Text style={styles.signUpLink}>Sign in</Text>
             </TouchableOpacity>
           </View>

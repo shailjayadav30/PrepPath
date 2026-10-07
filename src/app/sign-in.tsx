@@ -10,9 +10,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, Feather } from "@expo/vector-icons";
 
-import { authClient } from "@/lib/auth-client";
-import { Button } from "expo-router/build/react-navigation";
-import { router, useRouter } from "expo-router";
+import { authClient } from "@/lib/auth-client"
+import { useRouter } from "expo-router";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -131,7 +130,7 @@ export default function SignIn() {
           {/* Sign up */}
           <View style={styles.signUpRow}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => router.push("/sign-up")}>
+            <TouchableOpacity onPress={() => router.replace("/sign-up")}>
               <Text style={styles.signUpLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
