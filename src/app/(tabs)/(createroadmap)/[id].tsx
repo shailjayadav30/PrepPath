@@ -22,13 +22,87 @@ export default function RoadmapDetail() {
     })();
   }, [id]);
 
+  const deleteUnit = async (unitId: string) => {
+    try {
+      const cookie = await authClient.getCookie();
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_BASE_URL}/api/units/${unitId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Cookie: cookie ?? "",
+          },
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete unit");
+      }
+      console.log("deleted SUccessfully", data);
+
+      setRoadmap((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          units: prev.units.filter((unit) => unit.id !== unitId),
+        };
+      });
+    } catch (error) {
+      console.error("Failed to delete unit:", error);
+      Alert.alert("Error", "Failed to delete unit. Please try again.");
+    }
+  };
+
+  const deleteTopic = async (
+    unitId: string,
+    topicId: string,
+    // subTopicId: string,
+  ) => {
+    try {
+      // console.log("subTopicId", subTopicId);
+      const cookie = await authClient.getCookie();
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_BASE_URL}/api/topics/${topicId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Cookie: cookie ?? "",
+          },
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete");
+      }
+      console.log("deleted successfully", data);
+
+      setRoadmap((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          units: prev.units.map((unit) =>
+            unit.id !== unitId
+              ? unit
+              : {
+                  ...unit,
+                  topics: unit.topics.filter((topic) => topic.id !== topicId),
+                },
+          ),
+        };
+      });
+    } catch (error) {
+      console.error("Failed to delete topic:", error);
+      Alert.alert("Error", "Failed to delete topic. Please try again.");
+    }
+  };
+
   const deleteSubTopic = async (
     unitId: string,
     topicId: string,
     subTopicId: string,
   ) => {
     try {
-      console.log("subTopicId", subTopicId);
       const cookie = await authClient.getCookie();
 
       const response = await fetch(
@@ -40,11 +114,12 @@ export default function RoadmapDetail() {
           },
         },
       );
-      console.log("deleted", response.json());
-      if (!response) {
-        throw new Error("Failed to delete subtopic");
-      }
 
+      const data = await response.json();
+      console.log("deleted", data);
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete subtopic");
+      }
       setRoadmap((prev) => {
         if (!prev) return prev;
         return {
@@ -158,14 +233,8 @@ export default function RoadmapDetail() {
             setDone(unitId, topicId, subId);
             // TODO: PATCH /api/subtopic/:subId { completed: !current }
           }}
-          onDeleteUnit={(unitId) => {
-            setRoadmap({
-              ...roadmap,
-              units: roadmap.units.filter((u) => u.id !== unitId),
-            });
-            // TODO: DELETE /api/unit/:unitId
-          }}
-          onDeleteTopic={() => deleteSubTopic}
+          onDeleteUnit={deleteUnit}
+          onDeleteTopic={deleteTopic}
           onDeleteSubTopic={deleteSubTopic}
         />
       </ScrollView>

@@ -1,37 +1,16 @@
+				
+
 # Code Review: Shinro (studyfrontend)
 
 Reviewed: every file under `src/`, `types/`, plus `app.json`, `package.json`, `tsconfig.json`, `eas.json`, `.gitignore`.
-Branch: `googleauth` (includes the uncommitted changes in `[id].tsx`).
-`npx tsc --noEmit` currently fails with 2 errors (see 3.1).
+Branch: `googleauth`.
+`npx tsc --noEmit` passes.
 
 Fixes are grouped by priority. Each item lists the file, the problem, and the fix.
 
 ---
 
 ## 1. Bugs (fix first)
-
-### 1.2 Tapping "active" deletes the roadmap
-
-**File:** [src/components/ui/RoadmapCard.	tsx:40-42](src/components/ui/RoadmapCard.tsx#L40-L42)
-
-The `"active"` text button is wired to `onPress={onDelete}`. The trash icon also deletes **with no confirmation**.
-**Fix:** remove or rewire the "active" button (probably meant to toggle `isFollowing`), and add a confirm dialog before deleting (you already have `confirmDelete` in `RoadmapViw.tsx`).
-
-### 1.3 Subtopic delete always "succeeds" in the UI
-
-**File:** [src/app/(tabs)/(createroadmap)/[id].tsx:103-153](src/app/(tabs)/(createroadmap)/[id].tsx#L103-L153)
-
-- `response.json()` is not awaited (it logs a Promise).
-- `if (!response)` is never true because `fetch` always returns a Response. A 4xx/5xx is treated as success, so the subtopic disappears locally but still exists on the server.
-
-**Fix:** match `deleteUnit`:
-
-```ts
-const data = await response.json();
-if (!response.ok) throw new Error(data.message || "Failed to delete subtopic");
-```
-
-Also remove the dead `if (!response)` block in `deleteTopic` (line 79).
 
 ### 1.4 Roadmap detail screen spins forever on error
 
@@ -127,8 +106,8 @@ Also:
 
 ### 2.5 Centralize colors and theme
 
-Every screen redefines `GREEN`, `GREEN_DARK`, `GREEN_TINT`, `MUTED`, `DANGER`, and `MUTED` has **4 different values** (`#5F6F68`, `#7A837F`, `#6B7A73`, `#789083`). Meanwhile [src/constants/theme.ts](src/constants/theme.ts) and the `useTheme` hook (from the Expo template) aren't used by any real screen.
-**Fix:** define one palette in `src/constants/theme.ts` (light + dark) and import it everywhere.
+Every screen redefines `GREEN`, `GREEN_DARK`, `GREEN_TINT`, `MUTED`, `DANGER`, and `MUTED` has **4 different values** (`#5F6F68`, `#7A837F`, `#6B7A73`, `#789083`).
+**Fix:** create `src/constants/theme.ts` with one palette (light + dark) and import it everywhere.
 
 ### 2.6 Dark mode is half-enabled
 
@@ -150,15 +129,6 @@ Every screen redefines `GREEN`, `GREEN_DARK`, `GREEN_TINT`, `MUTED`, `DANGER`, a
 ---
 
 ## 3. TypeScript and type safety
-
-### 3.1 Type check fails
-
-```
-src/lib/roadmapHelpers.ts(1,10): error TS2305: Module has no exported member 'Subject'.
-src/lib/roadmapHelpers.ts(62,26): error TS7006: Parameter 'unit' implicitly has an 'any' type.
-```
-
-`roadmapHelpers.ts` isn't imported anywhere. Delete it (see 4).
 
 ### 3.2 Remove `any`
 
@@ -191,16 +161,8 @@ In `[id].tsx`, `find(...)!` and `value!` will crash if an id goes stale (for exa
 
 | File                                                                                                                                               | Why                                                                                        |
 | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `src/lib/roadmapHelpers.ts`                                                                                                                      | Not imported; breaks`tsc`                                                                |
-| `src/components/roadmap/TopicCard.tsx`                                                                                                           | Not imported (replaced by`RoadmapViw.tsx`)                                               |
-| `src/components/roadmap/SubTopicItem.tsx`, `RoadmapSectionHeader.tsx`, `RoadmapCheckBox.tsx`                                                 | Only used by`TopicCard`                                                                  |
-| `UnitCardProps`, `TopicCardProps`, `SubTopicItemProps`, `RoadmapSectionHeaderProps`, `RoadmapCheckBoxProps` in `types/roadmapTypes.ts` | Only used by the files above                                                               |
-| `src/components/ui/timer.tsx`                                                                                                                    | Placeholder; lowercase name (`timer`) isn't a valid component name                       |
-| `src/components/ui/Collapsiblee.tsx`                                                                                                             | Unused (typo in name)                                                                      |
-| `src/components/app-tabs.tsx`, `app-tabs.web.tsx`, `hint-row.tsx`, `web-badge.tsx`, `external-link.tsx`, `animated-icon*.tsx/.css`     | Expo template leftovers, unused                                                            |
-| `src/components/themed-text.tsx`, `themed-view.tsx`, `src/hooks/use-theme.ts`                                                                | Only used by the template files above (keep them if you adopt them in 2.5)                 |
+| `UnitCardProps`, `TopicCardProps`, `SubTopicItemProps`, `RoadmapSectionHeaderProps`, `RoadmapCheckBoxProps` in `types/roadmapTypes.ts` | The components that used them have been deleted                                            |
 | `src/components/social-sign-in.tsx`                                                                                                              | Placeholder that renders the text "social-sign-in" inside the sign-up page's Google button |
-| `scripts/reset-project.js` + `reset-project` npm script                                                                                        | Template script; running it would move`src/` away                                        |
 | `.github/modernize/java-upgrade/`                                                                                                                | Unrelated leftover from a VS Code Java extension                                           |
 | Large commented-out blocks in`sign-up.tsx`, `social-sign-in.tsx`, `[id].tsx`, `RoadmapViw.tsx`                                             | Git keeps the history; delete them                                                         |
 
@@ -286,8 +248,8 @@ Also: `ErrorBoundary.tsx` exists but is commented out. Either use it (see 6.3) o
 
 ## Suggested order of work
 
-1. Bugs 1.2 – 1.7 (quick fixes; 1.2 can delete user data).
-2. Delete dead code (section 4) → `tsc` passes.
+1. Bugs 1.4 – 1.7 (quick fixes; 1.4 can leave users stuck on a spinner).
+2. Delete the remaining dead code (section 4).
 3. Add `src/lib/api.ts` (2.1), then TanStack Query (2.2). This fixes 1.4, 1.8, 1.9 almost automatically.
 4. Save progress (1.5) with optimistic updates.
 5. Theme/colors + shared auth components (2.5 – 2.7).
