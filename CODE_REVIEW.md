@@ -1,5 +1,3 @@
-				
-
 # Code Review: Shinro (studyfrontend)
 
 Reviewed: every file under `src/`, `types/`, plus `app.json`, `package.json`, `tsconfig.json`, `eas.json`, `.gitignore`.
@@ -10,14 +8,7 @@ Fixes are grouped by priority. Each item lists the file, the problem, and the fi
 
 ---
 
-## 1. Bugs (fix first)
-
-### 1.4 Roadmap detail screen spins forever on error
-
-**File:** [src/app/(tabs)/(createroadmap)/[id].tsx:13-23](src/app/(tabs)/(createroadmap)/[id].tsx#L13-L23)
-
-No `try/catch`, no `res.ok` check, no error state. If the request fails (network, 404, expired session), `roadmap` stays `null` and the spinner never stops. There's also an unhandled promise rejection.
-**Fix:** add `error` state, check `res.ok`, show an error and a retry button, and ignore the result after unmount (like `allRoadmap.tsx` does with `cancelled`).
+## 1. Bugs (fix first)		
 
 ### 1.5 Completion progress is never saved
 
@@ -25,26 +16,6 @@ No `try/catch`, no `res.ok` check, no error state. If the request fails (network
 
 Checking units, topics, and subtopics only updates local state (three `TODO: PATCH` comments). Progress is lost when the user leaves the screen. This is the app's main feature.
 **Fix:** call the PATCH endpoints. Update the UI first, then roll back and show an error if the request fails.
-
-### 1.6 Sign-out goes to a route that doesn't exist
-
-**File:** [src/app/(tabs)/settings.tsx:81](src/app/(tabs)/settings.tsx#L81)
-
-`router.replace("/(auth)/login")`: there is no `(auth)` group or `login` route.
-**Fix:** delete the line. Once the session is cleared, `Stack.Protected` in the root layout redirects to `sign-in` on its own.
-
-### 1.7 "Sign in" link on the sign-up page goes to the wrong screen
-
-**File:** [src/app/sign-up.tsx:156](src/app/sign-up.tsx#L156)
-
-`router.push("/(tabs)")` should be `router.replace("/sign-in")` (or `router.back()`).
-
-### 1.8 Home screen can stay stuck on loading
-
-**File:** [src/app/(tabs)/index.tsx:32-56](src/app/(tabs)/index.tsx#L32-L56)
-
-If `userId` is undefined, `getRoadmap` returns before `finally`, so `loading` stays `true`. A failed fetch only logs to the console, and the user sees "No roadmap yet", which is misleading.
-**Fix:** set `loading=false` on the early return, add an error state, and show an error message.
 
 ### 1.9 Home list doesn't refresh after creating or deleting a roadmap
 
@@ -143,17 +114,9 @@ The preview also handles `typeof s === "string" ? s : s.name`, a sign the API re
 
 Fix the naming on the backend, or at least type each response so a mistake is a compile error.
 
-### 3.4 Avoid non-null assertions
-
-In `[id].tsx`, `find(...)!` and `value!` will crash if an id goes stale (for example after a delete). Handle `undefined`.
-
 ### 3.5 Make sure typed routes work
 
-`experiments.typedRoutes` is on, yet `router.replace("/(auth)/login")` (1.6) passed `tsc`. Run `npx expo start` once (or `npx expo customize tsconfig.json`) so `.expo/types` is generated, then re-run `tsc`. It should catch invalid hrefs.
-
-### 3.6 Don't import Expo Router internals
-
-[sign-in.tsx:14](src/app/sign-in.tsx#L14): `import { Button } from "expo-router/build/react-navigation"`. This is an internal path that can break on any update, and it's unused. Remove it. Line 15 also imports `router` and then shadows it with `const router = useRouter()`.
+`experiments.typedRoutes` is on, yet an invalid route (`router.replace("/(auth)/login")`, since removed) passed `tsc`. Run `npx expo start` once (or `npx expo customize tsconfig.json`) so `.expo/types` is generated, then re-run `tsc`. It should catch invalid hrefs.
 
 ---
 
@@ -177,7 +140,7 @@ Also: `ErrorBoundary.tsx` exists but is commented out. Either use it (see 6.3) o
 - **Placeholder buttons that do nothing:** "Forgot password?" (on both pages, and it makes no sense on sign-up), the Google button on sign-in, and the bell icon in `HomeHeader`. Hide them until they work.
 - **Sign-up label icon:** "UserName" uses the `lock` icon. Use `user`. The label should be "Name" (better-auth's `name` is a display name, not a username).
 - **Sign-in label** says "Email or Username", but only `signIn.email` is called. Change it to "Email".
-- **Typos:** "loogging", "Allready", `TabseLayout`.
+- **Typos:** "loogging", `TabseLayout`.
 - **Keyboard covers inputs** on small screens. Wrap the form in `KeyboardAvoidingView` / `ScrollView` with `keyboardShouldPersistTaps="handled"`.
 - Add `textContentType` / `autoComplete` (`email`, `password`, `new-password`, `name`) so password managers and autofill work.
 
@@ -248,9 +211,9 @@ Also: `ErrorBoundary.tsx` exists but is commented out. Either use it (see 6.3) o
 
 ## Suggested order of work
 
-1. Bugs 1.4 – 1.7 (quick fixes; 1.4 can leave users stuck on a spinner).
+1. Bug 1.9 (quick fix with `useFocusEffect`).
 2. Delete the remaining dead code (section 4).
-3. Add `src/lib/api.ts` (2.1), then TanStack Query (2.2). This fixes 1.4, 1.8, 1.9 almost automatically.
+3. Add `src/lib/api.ts` (2.1), then TanStack Query (2.2). This removes most of the hand-written loading/error code.
 4. Save progress (1.5) with optimistic updates.
 5. Theme/colors + shared auth components (2.5 – 2.7).
 6. ESLint + Prettier + typecheck + first tests (section 9).

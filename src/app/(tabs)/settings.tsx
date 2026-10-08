@@ -1,7 +1,7 @@
 import ImagePickerExample from "@/components/ui/ImagePicker";
+// import { useOnboarding } from "@/components/OnboardingProvider";
 import { authClient } from "@/lib/auth-client";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -69,7 +69,7 @@ const Settings = () => {
   const { data: session } = authClient.useSession();
   const user = session?.user;
   const [photo, setPhoto] = useState<string | null>(user?.image ?? null);
-const router=useRouter()
+  // const { resetOnboarding } = useOnboarding();
   const handleSignOut = () => {
     Alert.alert("Sign out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
@@ -78,7 +78,6 @@ const router=useRouter()
         style: "destructive",
         onPress: async () => {
           await authClient.signOut();
-        router.replace("/(auth)/login") 
         },
       },
     ]);
@@ -129,6 +128,12 @@ const router=useRouter()
         <Section title="Session">
           <Row icon="log-out-outline" label="Sign out" danger onPress={handleSignOut} last />
         </Section>
+
+        {/* {__DEV__ && (
+          <Section title="Developer">
+            <Row icon="refresh-outline" label="Reset onboarding" onPress={resetOnboarding} last />
+          </Section>
+        )} */}
       </ScrollView>
     </SafeAreaView>
   );

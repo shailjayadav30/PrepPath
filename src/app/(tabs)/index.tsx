@@ -28,9 +28,13 @@ export default function Index() {
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
+  const [error, setError] = useState<string | null>(null);
   const getRoadmap = useCallback(async () => {
-    if (!userId) return;
+    setError(null);
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     try {
       const cookie = await authClient.getCookie();
       const response = await fetch(
@@ -47,8 +51,9 @@ export default function Index() {
 
       const data = await response.json();
       setRoadmaps(data.roadmaps ?? []);
-    } catch (error) {
-      console.error("Error fetching roadmaps:", error);
+    } catch (err) {
+      console.error("Error fetching roadmaps:", err);
+      setError("Couldn't load your roadmaps.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -80,6 +85,23 @@ export default function Index() {
       <SafeAreaView style={styles.center}>
         <ActivityIndicator size="large" color={GREEN} />
         <Text style={styles.loadingText}>Loading your roadmaps...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Ionicons name="alert-circle-outline" size={48} color="#C45B5B" />
+        <Text style={styles.loadingText}>{error}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            setLoading(true);
+            getRoadmap();
+          }}
+        >
+          <Text style={styles.retryText}>Try again</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -179,6 +201,12 @@ const styles = StyleSheet.create({
     marginTop: 14,
     fontSize: 15,
     color: TEXT_MUTED,
+  },
+  retryText: {
+    marginTop: 12,
+    fontSize: 15,
+    fontWeight: "600",
+    color: GREEN,
   },
 
   // Header
