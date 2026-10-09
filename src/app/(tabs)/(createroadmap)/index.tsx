@@ -128,7 +128,11 @@ export default function Roadmap() {
           body: formData,
           credentials: "include",
         });
-        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+        if (!res.ok) {
+          // surface the backend's message, same as the native XHR path
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.message ?? `Server responded with ${res.status}`);
+        }
         data = await res.json();
       } else {
         data = await uploadWithXHR(file);
