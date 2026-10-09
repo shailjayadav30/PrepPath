@@ -164,6 +164,32 @@ export default function RoadmapDetail() {
     }
   };
 
+  // Completion is applied locally first; on failure restore the state from before the toggle
+  const saveCompletion = async (
+    path: string,
+    completed: boolean,
+    snapshot: Roadmap,
+  ) => {
+    try {
+      const cookie = await authClient.getCookie();
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_BASE_URL}/api/${path}/complete`,
+        {
+          method: "PATCH",
+          headers: { Cookie: cookie ?? "", "Content-Type": "application/json" },
+          body: JSON.stringify({ completed }),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Failed to update progress (${response.status})`);
+      }
+    } catch (error) {
+      console.error("Failed to update progress:", error);
+      setRoadmap(snapshot);
+      Alert.alert("Error", "Couldn't save your progress. Please try again.");
+    }
+  };
+
   if (error) {
     return (
       <View
@@ -250,7 +276,7 @@ export default function RoadmapDetail() {
               )
             );
             setDone(unitId, null, null, next);
-            // TODO: PATCH /api/unit/:unitId/complete { completed: next }
+            saveCompletion(`units/${unitId}`, next, roadmap);
           }}
           onToggleTopic={(unitId, topicId) => {
             const t = roadmap.units
@@ -261,11 +287,16 @@ export default function RoadmapDetail() {
               ? t.subTopics.every((s) => s.completed)
               : t.completed);
             setDone(unitId, topicId, null, next);
-            // TODO: PATCH /api/topic/:topicId { completed: next }
+            saveCompletion(`topics/${topicId}`, next, roadmap);
           }}
           onToggleSubTopic={(unitId, topicId, subId) => {
+            const sub = roadmap.units
+              .find((u) => u.id === unitId)
+              ?.topics.find((t) => t.id === topicId)
+              ?.subTopics.find((s) => s.id === subId);
+            if (!sub) return;
             setDone(unitId, topicId, subId);
-            // TODO: PATCH /api/subtopic/:subId { completed: !current }
+            saveCompletion(`subTopics/${subId}`, !sub.completed, roadmap);
           }}
           onDeleteUnit={deleteUnit}
           onDeleteTopic={deleteTopic}
