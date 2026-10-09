@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Roadmap } from "../../../types/roadmapTypes";
+import { RoadmapSummary } from "../../../types/roadmapTypes";
 
 const GREEN = "#16A673";
 const GREEN_DARK = "#0F5132";
@@ -25,7 +25,7 @@ export default function Index() {
   const userId = session?.user.id;
   const router = useRouter();
 
-  const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
+  const [roadmaps, setRoadmaps] = useState<RoadmapSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);

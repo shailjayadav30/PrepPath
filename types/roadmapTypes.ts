@@ -12,6 +12,23 @@ export type Roadmap = {
   isFollowing: boolean;
   units: Unit[];
 };
+// List item from GET /api/roadmap and /api/roadmap/isfollowing (no unit tree)
+export type RoadmapProgress = {
+  totalTopics: number;
+  completedTopics: number;
+  totalSubTopics: number;
+  completedSubTopics: number;
+  percent: number;
+};
+export type RoadmapSummary = {
+  id: string;
+  name: string;
+  isFollowing: boolean;
+  createdAt: string;
+  updatedAt: string;
+  unitCount: number;
+  progress: RoadmapProgress;
+};
 export type RoadmapCheckBoxProps = {
   onPress: () => void;
   size?: number;

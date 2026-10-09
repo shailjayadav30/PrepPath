@@ -11,7 +11,7 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Roadmap } from "../../../../types/roadmapTypes";
+import { RoadmapSummary } from "../../../../types/roadmapTypes";
 import RoadmapCard from "@/components/ui/RoadmapCard";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,10 +21,9 @@ export default function AllRoadmap() {
   const { data: session } = authClient.useSession();
   const userId = session?.user.id;
 
-  const [roadmapList, setRoadmapList] = useState<Roadmap[]>([]);
+  const [roadmapList, setRoadmapList] = useState<RoadmapSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [following, setFollowing] = useState(false);
   const router = useRouter();
   async function deleteRoadmap(roadmapId: string) {
     try {
@@ -101,26 +100,27 @@ export default function AllRoadmap() {
     };
   }, [userId]);
 
-  async function toggleFollow(roadmapId: string) {
-    const flip = () =>
+  async function toggleFollow(roadmapId: string, next: boolean) {
+    const setFollowing = (value: boolean) =>
       setRoadmapList((prev) =>
         prev.map((r) =>
-          r.id === roadmapId ? { ...r, isFollowing: !r.isFollowing } : r,
+          r.id === roadmapId ? { ...r, isFollowing: value } : r,
         ),
       );
-    flip();
+    setFollowing(next);
     try {
       const cookie = await authClient.getCookie();
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap/isfollowing/${roadmapId}`,
         {
           method: "PATCH",
-          headers: { Cookie: cookie ?? "" },
+          headers: { Cookie: cookie ?? "", "Content-Type": "application/json" },
+          body: JSON.stringify({ isFollowing: next }),
         },
       );
       if (!response.ok) throw new Error("Failed to update follow status");
     } catch (error) {
-      flip();
+      setFollowing(!next);
       Alert.alert("Couldn't update roadmap", "Please try again");
     }
   }
@@ -142,8 +142,6 @@ export default function AllRoadmap() {
       </SafeAreaView>
     );
   }
-
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -182,7 +180,7 @@ export default function AllRoadmap() {
             <RoadmapCard
               key={roadmap.id}
               roadmap={roadmap}
-              onToggleFollow={() => toggleFollow(roadmap.id)}
+              onToggleFollow={() => toggleFollow(roadmap.id,!roadmap.isFollowing)}
               onDelete={() =>
                 confirmDelete(roadmap.name, () => deleteRoadmap(roadmap.id))
               }

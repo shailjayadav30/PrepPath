@@ -1,10 +1,10 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { Roadmap } from "../../../types/roadmapTypes";
+import { RoadmapSummary } from "../../../types/roadmapTypes";
 import { Ionicons } from "@expo/vector-icons";
 
 type Prop = {
-  roadmap: Roadmap;
+  roadmap: RoadmapSummary;
   onPress: () => void;
   onDelete?: () => void;
   // isFollowing?: () => void;
@@ -17,7 +17,7 @@ export default function RoadmapCard({
   onDelete,
   onToggleFollow
 }: Prop) {
-  const progress: number = 68;
+  const progress = roadmap.progress?.percent ?? 0;
   return (
     <TouchableOpacity
       activeOpacity={0.85}
