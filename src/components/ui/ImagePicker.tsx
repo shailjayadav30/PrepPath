@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
-  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -11,56 +12,49 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors } from "@/lib/theme";
 import { getInitials } from "../../../types/roadmapTypes";
-
-const GREEN = "#16A673";
-const GREEN_DARK = "#0F5132";
-const GREEN_TINT = "#E8F6F1";
-const MUTED = "#7A837F";
-const DANGER = "#D64545";
 
 type Props = {
   uri?: string | null;
   name?: string;
   size?: number;
-  onChange?: (uri: string | null) => void;
+  // Shows a spinner over the photo (e.g. while it uploads)
+  busy?: boolean;
+  onPick: (asset: ImagePicker.ImagePickerAsset) => void;
+  onRemove?: () => void;
 };
 
-
-
-export default function ImagePickerExample({
+// Profile photo with a sheet to pick from the gallery, take a photo, or remove it.
+// Controlled: the parent uploads the picked image and passes the new `uri`.
+export default function AvatarPicker({
   uri,
   name,
   size = 112,
-  onChange,
+  busy,
+  onPick,
+  onRemove,
 }: Props) {
   const insets = useSafeAreaInsets();
-  const [image, setImage] = useState<string | null>(uri ?? null);
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    setImage(uri ?? null);
-  }, [uri]);
-
-  const update = (value: string | null) => {
-    setImage(value);
-    onChange?.(value);
-  };
-
   // Close the sheet first, then launch the picker (iOS dislikes stacked modals)
-  const run = (action: () => Promise<void>) => {
+  const run = (action: () => void | Promise<void>) => {
     setOpen(false);
     setTimeout(action, 250);
   };
 
+  const options: ImagePicker.ImagePickerOptions = {
+    mediaTypes: ["images"],
+    allowsEditing: true,
+    aspect: [1, 1],
+    // Keeps uploads small; the server crops to 512x512 anyway
+    quality: 0.6,
+  };
+
   const pickFromGallery = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!result.canceled) update(result.assets[0].uri);
+    const result = await ImagePicker.launchImageLibraryAsync(options);
+    if (!result.canceled) onPick(result.assets[0]);
   };
 
   const takePhoto = async () => {
@@ -72,15 +66,9 @@ export default function ImagePickerExample({
       );
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!result.canceled) update(result.assets[0].uri);
+    const result = await ImagePicker.launchCameraAsync(options);
+    if (!result.canceled) onPick(result.assets[0]);
   };
-
-  const removePhoto = async () => update(null);
 
   const initials = getInitials(name);
   const badge = Math.round(size * 0.3);
@@ -88,36 +76,28 @@ export default function ImagePickerExample({
   return (
     <>
       <Pressable
-        onPress={() => setOpen(true)}
-        style={({ pressed }) => [
-          { width: size, height: size },
-          pressed && styles.pressed,
-        ]}
+        onPress={() => !busy && setOpen(true)}
+        style={({ pressed }) => [{ width: size, height: size }, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Change profile photo"
       >
-        <View
-          style={[
-            styles.ring,
-            { width: size, height: size, borderRadius: size / 2 },
-          ]}
-        >
-          {image ? (
-            <Image source={{ uri: image }} style={styles.image} />
+        <View style={[styles.ring, { width: size, height: size, borderRadius: size / 2 }]}>
+          {uri ? (
+            <Image source={{ uri }} style={styles.image} contentFit="cover" transition={150} />
           ) : initials ? (
-            <Text style={[styles.initials, { fontSize: size * 0.34 }]}>
-              {initials}
-            </Text>
+            <Text style={[styles.initials, { fontSize: size * 0.34 }]}>{initials}</Text>
           ) : (
-            <Ionicons name="person" size={size * 0.45} color={GREEN} />
+            <Ionicons name="person" size={size * 0.45} color={colors.primary} />
+          )}
+          {busy && (
+            <View style={styles.busy}>
+              <ActivityIndicator color={colors.white} />
+            </View>
           )}
         </View>
 
-        <View
-          style={[
-            styles.badge,
-            { width: badge, height: badge, borderRadius: badge / 2 },
-          ]}
-        >
-          <Ionicons name="camera" size={badge * 0.52} color="#fff" />
+        <View style={[styles.badge, { width: badge, height: badge, borderRadius: badge / 2 }]}>
+          <Ionicons name="camera" size={badge * 0.52} color={colors.white} />
         </View>
       </Pressable>
 
@@ -137,17 +117,13 @@ export default function ImagePickerExample({
             label="Choose from gallery"
             onPress={() => run(pickFromGallery)}
           />
-          <SheetOption
-            icon="camera-outline"
-            label="Take a photo"
-            onPress={() => run(takePhoto)}
-          />
-          {image && (
+          <SheetOption icon="camera-outline" label="Take a photo" onPress={() => run(takePhoto)} />
+          {uri && onRemove && (
             <SheetOption
               icon="trash-outline"
               label="Remove photo"
               danger
-              onPress={() => run(removePhoto)}
+              onPress={() => run(onRemove)}
             />
           )}
 
@@ -176,17 +152,10 @@ function SheetOption({
       onPress={onPress}
       style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
     >
-      <View
-        style={[
-          styles.optionIcon,
-          danger && { backgroundColor: "#FDECEC" },
-        ]}
-      >
-        <Ionicons name={icon} size={20} color={danger ? DANGER : GREEN} />
+      <View style={[styles.optionIcon, danger && { backgroundColor: colors.dangerTint }]}>
+        <Ionicons name={icon} size={20} color={danger ? colors.danger : colors.primary} />
       </View>
-      <Text style={[styles.optionText, danger && { color: DANGER }]}>
-        {label}
-      </Text>
+      <Text style={[styles.optionText, danger && { color: colors.danger }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -195,30 +164,40 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85 },
 
   ring: {
-    backgroundColor: GREEN_TINT,
+    backgroundColor: colors.primaryTint,
     borderWidth: 3,
-    borderColor: GREEN,
+    borderColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
   image: { width: "100%", height: "100%" },
-  initials: { color: GREEN_DARK, fontWeight: "700" },
+  initials: { color: colors.primaryDark, fontWeight: "700" },
+  busy: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: "rgba(15, 81, 50, 0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   badge: {
     position: "absolute",
     right: 0,
     bottom: 0,
-    backgroundColor: GREEN,
+    backgroundColor: colors.primary,
     borderWidth: 3,
-    borderColor: "#FFFFFF",
+    borderColor: colors.white,
     alignItems: "center",
     justifyContent: "center",
   },
 
   backdrop: { flex: 1, backgroundColor: "rgba(15,81,50,0.35)" },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -232,12 +211,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#DDE7E2",
     marginBottom: 14,
   },
-  sheetTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: GREEN_DARK,
-    marginBottom: 8,
-  },
+  sheetTitle: { fontSize: 18, fontWeight: "700", color: colors.primaryDark, marginBottom: 8 },
   option: {
     flexDirection: "row",
     alignItems: "center",
@@ -245,16 +219,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
   },
-  optionPressed: { backgroundColor: "#F3FAF7" },
+  optionPressed: { backgroundColor: colors.primarySoft },
   optionIcon: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: GREEN_TINT,
+    backgroundColor: colors.primaryTint,
     alignItems: "center",
     justifyContent: "center",
   },
-  optionText: { fontSize: 16, fontWeight: "500", color: "#17201C" },
+  optionText: { fontSize: 16, fontWeight: "500", color: colors.text },
   cancel: {
     marginTop: 10,
     height: 50,
@@ -263,5 +237,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cancelText: { fontSize: 16, fontWeight: "600", color: MUTED },
+  cancelText: { fontSize: 16, fontWeight: "600", color: colors.textSecondary },
 });
