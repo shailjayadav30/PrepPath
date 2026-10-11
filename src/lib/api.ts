@@ -38,10 +38,12 @@ export async function apiJson<T>(
   return data as T;
 }
 
-// Multipart upload of a picked PDF as form field "pdffile" (what multer expects)
+// Multipart upload of a picked PDF as form field "pdffile" (what multer expects),
+// plus any extra text fields (e.g. spaceId)
 export async function uploadPdf<T>(
   path: string,
   file: DocumentPickerAsset,
+  fields: Record<string, string> = {},
 ): Promise<T> {
   const url = `${BASE_URL}/api${path}`;
 
@@ -49,6 +51,7 @@ export async function uploadPdf<T>(
     if (!file.file) throw new Error("No file blob available for web upload");
     const formData = new FormData();
     formData.append("pdffile", file.file, file.name);
+    for (const [key, value] of Object.entries(fields)) formData.append(key, value);
     const res = await fetch(url, {
       method: "POST",
       body: formData,
@@ -87,6 +90,7 @@ export async function uploadPdf<T>(
       name: file.name || "syllabus.pdf",
       type: file.mimeType || "application/pdf",
     } as any);
+    for (const [key, value] of Object.entries(fields)) formData.append(key, value);
     xhr.send(formData);
   });
 }

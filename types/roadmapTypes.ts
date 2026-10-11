@@ -24,7 +24,7 @@ export type Roadmap = {
   isFollowing: boolean;
   examOrBoard?: string | null;
   subjectGroup?: string | null;
-  examGroupId?: string | null;
+  spaceId?: string;
   // The syllabus upload it was generated from (its PDF can be viewed while stored)
   uploadId?: string | null;
   units: Unit[];
@@ -44,27 +44,40 @@ export type RoadmapSummary = {
   documentType: DocumentType | null;
   examOrBoard: string | null;
   subjectGroup: string | null; // "Semester 3", "Prelims", ...
-  examGroupId: string | null;
+  spaceId: string;
   createdAt: string;
   updatedAt: string;
   unitCount: number;
   progress: RoadmapProgress;
 };
 
-// Roadmaps generated from one multi-subject PDF, e.g. "JEE Main 2026"
-export type ExamGroup = {
+type SpaceProgress = { totalTopics: number; completedTopics: number; percent: number };
+
+// A user-named collection of roadmaps, e.g. "UPSC 2027" (GET /api/spaces)
+export type Space = {
   id: string;
   name: string;
-  examOrBoard: string | null;
   createdAt: string;
   updatedAt: string;
-  // For POST /syllabus/:uploadId/roadmaps; only usable while canGenerate (upload not expired)
-  uploadId: string | null;
+  roadmapCount: number;
+  progress: SpaceProgress;
+};
+
+// A PDF uploaded into a space, with every subject detected in it
+export type SpaceUpload = {
+  id: string; // for POST /syllabus/:uploadId/roadmaps while canGenerate
+  fileName: string | null;
+  pageCount: number;
+  createdAt: string;
+  examOrBoard: string | null;
   canGenerate: boolean;
+  subjects: AnalyzeSubject[];
+};
+
+// GET /api/spaces/:spaceId
+export type SpaceDetail = Omit<Space, "roadmapCount"> & {
   roadmaps: RoadmapSummary[];
-  // Every subject detected in the group's PDF; roadmapId is set once it's created
-  subjects: (AnalyzeSubject & { roadmapId: string | null })[];
-  progress: { totalTopics: number; completedTopics: number; percent: number };
+  uploads: SpaceUpload[];
 };
 
 // POST /api/syllabus/analyze
@@ -74,6 +87,8 @@ export type AnalyzeSubject = {
   group: string | null;
   startPage: number;
   endPage: number;
+  // Set when the space already has a roadmap for this subject
+  roadmapId?: string | null;
 };
 export type AnalyzeResponse = {
   uploadId: string;
@@ -101,7 +116,7 @@ export type GenerateResult = {
   | { status: "FAILED"; error: string }
 );
 export type GenerateResponse = {
-  examGroupId: string | null;
+  spaceId: string;
   results: GenerateResult[];
 };
 export type RoadmapCheckBoxProps = {
