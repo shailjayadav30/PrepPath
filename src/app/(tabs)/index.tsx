@@ -1,7 +1,7 @@
 import { authClient } from "@/lib/auth-client";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -26,6 +26,8 @@ export default function Index() {
   const router = useRouter();
 
   const [roadmaps, setRoadmaps] = useState<RoadmapSummary[]>([]);
+  // Whether the user has created any roadmap at all (followed or not)
+  const [hasAnyRoadmap, setHasAnyRoadmap] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,26 @@ export default function Index() {
       }
 
       const data = await response.json();
-      setRoadmaps(data.roadmaps ?? []);
+      const following: RoadmapSummary[] = data.roadmaps ?? [];
+      setRoadmaps(following);
+
+      // Not following anything: check if there are roadmaps they could follow
+      if (following.length === 0) {
+        const allResponse = await fetch(
+          `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap?limit=1`,
+          {
+            method: "GET",
+            headers: { Cookie: cookie ?? "" },
+          },
+        );
+        if (!allResponse.ok) {
+          throw new Error("Failed to fetch roadmaps");
+        }
+        const allData = await allResponse.json();
+        setHasAnyRoadmap((allData.roadmap ?? []).length > 0);
+      } else {
+        setHasAnyRoadmap(true);
+      }
     } catch (err) {
       console.error("Error fetching roadmaps:", err);
       setError("Couldn't load your roadmaps.");
@@ -60,9 +81,12 @@ export default function Index() {
     }
   }, [userId]);
 
-  useEffect(() => {
-    getRoadmap();
-  }, [getRoadmap]);
+  // Refetch every time Home comes into view, so follow changes made elsewhere show up
+  useFocusEffect(
+    useCallback(() => {
+      getRoadmap();
+    }, [getRoadmap]),
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -78,6 +102,10 @@ export default function Index() {
 
   const createRoadmap = () => {
     router.push("/(tabs)/(createroadmap)");
+  };
+
+  const browseRoadmaps = () => {
+    router.push("/(tabs)/(createroadmap)/allRoadmap");
   };
 
   if (loading) {
@@ -161,7 +189,38 @@ export default function Index() {
               <Ionicons name="chevron-forward" size={22} color={GREEN} />
             </TouchableOpacity>
           )}
+          ListFooterComponent={
+            <TouchableOpacity
+              style={[styles.primaryButton, styles.footerButton]}
+              onPress={createRoadmap}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="add" size={20} color={WHITE} />
+              <Text style={styles.primaryButtonText}>Create Roadmap</Text>
+            </TouchableOpacity>
+          }
         />
+      ) : hasAnyRoadmap ? (
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconCircle}>
+            <Ionicons name="bookmark-outline" size={48} color={GREEN} />
+          </View>
+          <Text style={styles.emptyTitle}>Not following any roadmap</Text>
+          <Text style={styles.emptyText}>
+            Follow a roadmap to see it here and pick up where you left off.
+          </Text>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={browseRoadmaps}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="map-outline" size={20} color={WHITE} />
+            <Text style={styles.primaryButtonText}>Follow a Roadmap</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={createRoadmap} hitSlop={8}>
+            <Text style={styles.secondaryLink}>or create a new one</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIconCircle}>
@@ -336,5 +395,15 @@ const styles = StyleSheet.create({
     color: WHITE,
     fontSize: 16,
     fontWeight: "700",
+  },
+  footerButton: {
+    justifyContent: "center",
+    marginTop: 6,
+  },
+  secondaryLink: {
+    marginTop: 18,
+    fontSize: 15,
+    fontWeight: "600",
+    color: GREEN,
   },
 });
