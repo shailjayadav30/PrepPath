@@ -19,6 +19,8 @@ export default function RoadmapLayout() {
           headerShown: false,
         })}
       />
+
+      <Stack.Screen name="pdf" options={{ headerShown: false }} />
     </Stack>
   );
 }

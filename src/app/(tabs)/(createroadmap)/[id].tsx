@@ -1,5 +1,5 @@
 import { authClient } from "@/lib/auth-client";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,6 +18,7 @@ export default function RoadmapDetail() {
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
     let cancelled = false;
@@ -190,6 +191,9 @@ export default function RoadmapDetail() {
     }
   };
 
+  const viewPdf = (uploadId: string) =>
+    router.push({ pathname: "/(tabs)/(createroadmap)/pdf", params: { uploadId } });
+
   if (error) {
     return (
       <View
@@ -298,6 +302,9 @@ export default function RoadmapDetail() {
             setDone(unitId, topicId, subId);
             saveCompletion(`subTopics/${subId}`, !sub.completed, roadmap);
           }}
+          {...(roadmap.uploadId && {
+            onViewPdf: () => viewPdf(roadmap.uploadId!),
+          })}
           onDeleteUnit={deleteUnit}
           onDeleteTopic={deleteTopic}
           onDeleteSubTopic={deleteSubTopic}

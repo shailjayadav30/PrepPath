@@ -33,6 +33,8 @@ export type RoadmapViewProps = {
     topicId: string,
     subTopicId: string,
   ) => void;
+  // Shown when the roadmap's syllabus PDF can be opened
+  onViewPdf?: () => void;
 };
 
 /* ---------- helpers ---------- */
@@ -218,6 +220,7 @@ function UnitCard({ unit, props }: { unit: Unit; props: RoadmapViewProps }) {
             {unit.name}
           </Text>
           <Text style={styles.unitMeta}>
+            {unit.sourceLabel ? `${unit.sourceLabel} · ` : ""}
             {doneCount}/{unit.topics.length} topics
           </Text>
         </TouchableOpacity>
@@ -261,13 +264,29 @@ export default function RoadmapView(props: RoadmapViewProps) {
   const percent = allTopics.length
     ? Math.round((doneTopics / allTopics.length) * 100)
     : 0;
+  // e.g. "JEE Main 2026 · Paper I" for roadmaps generated from a multi-subject PDF
+  const context = [roadmap.examOrBoard, roadmap.subjectGroup]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <View style={styles.container}>
+      {context ? <Text style={styles.context}>{context}</Text> : null}
       <Text style={styles.title}>{roadmap.name}</Text>
       <Text style={styles.subtitle}>
         Track your progress, one step at a time.
       </Text>
+      {props.onViewPdf && (
+        <TouchableOpacity
+          style={styles.pdfLink}
+          onPress={props.onViewPdf}
+          hitSlop={8}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="document-text-outline" size={16} color={GREEN} />
+          <Text style={styles.pdfLinkText}>View syllabus PDF</Text>
+        </TouchableOpacity>
+      )}
 
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${percent}%` }]} />
@@ -287,8 +306,24 @@ export default function RoadmapView(props: RoadmapViewProps) {
 
 const styles = StyleSheet.create({
   container: { paddingBottom: 30 },
+  context: {
+    color: GREEN,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    marginBottom: 4,
+  },
   title: { color: "#173D2D", fontSize: 23, fontWeight: "700", marginBottom: 4 },
   subtitle: { color: MUTED, fontSize: 13, marginBottom: 14 },
+  pdfLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 6,
+    marginTop: -6,
+    marginBottom: 14,
+  },
+  pdfLinkText: { color: GREEN, fontSize: 13, fontWeight: "600" },
 
   progressTrack: {
     height: 8,

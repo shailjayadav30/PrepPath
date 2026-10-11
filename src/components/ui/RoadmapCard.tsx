@@ -36,7 +36,9 @@ export default function RoadmapCard({
               {roadmap.name}
             </Text>
 
-            <Text style={styles.subtitle}>Your learning roadmap</Text>
+            <Text style={styles.subtitle} numberOfLines={1}>
+              {roadmap.subjectGroup ?? roadmap.examOrBoard ?? "Your learning roadmap"}
+            </Text>
           </View>
         </View>
 
