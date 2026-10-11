@@ -1,4 +1,7 @@
-import ImagePickerExample from "@/components/ui/ImagePicker";
+import AvatarPicker from "@/components/ui/ImagePicker";
+import NameModal from "@/components/ui/NameModal";
+import { apiJson, errorMessage, uploadFile } from "@/lib/api";
+import type { ImagePickerAsset } from "expo-image-picker";
 // import { useOnboarding } from "@/components/OnboardingProvider";
 import { authClient } from "@/lib/auth-client";
 import { Ionicons } from "@expo/vector-icons";
@@ -66,11 +69,72 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+// Matches the server's limit (Vercel rejects larger request bodies)
+const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
+
 const Settings = () => {
-  const { data: session } = authClient.useSession();
+  const { data: session, refetch } = authClient.useSession();
   const user = session?.user;
-  const [photo, setPhoto] = useState<string | null>(user?.image ?? null);
+  // Shown while the new photo uploads, so the change is visible right away
+  const [preview, setPreview] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   // const { resetOnboarding } = useOnboarding();
+
+  const uploadPhoto = async (asset: ImagePickerAsset) => {
+    if (asset.fileSize && asset.fileSize > MAX_PHOTO_BYTES) {
+      Alert.alert("Photo too large", "Please choose a photo smaller than 4 MB.");
+      return;
+    }
+    setPreview(asset.uri);
+    setPhotoBusy(true);
+    try {
+      await uploadFile("/profile/avatar", "avatar", {
+        uri: asset.uri,
+        name: asset.fileName ?? "avatar.jpg",
+        type: asset.mimeType ?? "image/jpeg",
+        file: asset.file,
+      });
+      // The session holds the user's image; reload it so every screen updates
+      await refetch();
+    } catch (err) {
+      console.error("Error uploading photo:", err);
+      Alert.alert("Couldn't update photo", errorMessage(err, "Please try again."));
+    } finally {
+      setPreview(null);
+      setPhotoBusy(false);
+    }
+  };
+
+  const removePhoto = () =>
+    Alert.alert("Remove photo", "Remove your profile photo?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: async () => {
+          setPhotoBusy(true);
+          try {
+            await apiJson("/profile/avatar", { method: "DELETE" });
+            await refetch();
+          } catch (err) {
+            Alert.alert("Couldn't remove photo", errorMessage(err, "Please try again."));
+          } finally {
+            setPhotoBusy(false);
+          }
+        },
+      },
+    ]);
+
+  const saveName = async (name: string) => {
+    try {
+      await apiJson("/profile", { method: "PATCH", body: { name } });
+      await refetch();
+      setEditingName(false);
+    } catch (err) {
+      Alert.alert("Couldn't update name", errorMessage(err, "Please try again."));
+    }
+  };
   const handleSignOut = () => {
     Alert.alert("Sign out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
@@ -101,22 +165,44 @@ const Settings = () => {
 
         {/* Profile card */}
         <View style={styles.profileCard}>
-          <ImagePickerExample
-            uri={photo}
+          <AvatarPicker
+            uri={preview ?? user?.image ?? null}
             name={user?.name}
-            onChange={(uri) => {
-              setPhoto(uri);
-              // TODO: upload uri to your backend and save the image URL
-            }}
+            busy={photoBusy}
+            onPick={uploadPhoto}
+            onRemove={removePhoto}
           />
-          <Text style={styles.profileName}>{user?.name ?? "Your Profile"}</Text>
+          <Pressable
+            style={styles.nameRow}
+            onPress={() => setEditingName(true)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Edit name"
+          >
+            <Text style={styles.profileName}>{user?.name ?? "Your Profile"}</Text>
+            <View style={styles.editIcon}>
+              <Ionicons name="pencil" size={14} color={colors.primary} />
+            </View>
+          </Pressable>
           {user?.email ? (
             <Text style={styles.profileEmail}>{user.email}</Text>
           ) : null}
+          <Text style={styles.profileHint}>Tap the photo or your name to change them</Text>
         </View>
 
+        <NameModal
+          visible={editingName}
+          title="Edit name"
+          message="This is how your name appears in the app."
+          placeholder="Your name"
+          initialValue={user?.name ?? ""}
+          submitLabel="Save"
+          onSubmit={saveName}
+          onClose={() => setEditingName(false)}
+        />
+
         <Section title="Account">
-          <Row icon="person-outline" label="Account Settings" onPress={soon("Account Settings")} />
+          <Row icon="person-outline" label="Edit name" value={user?.name} onPress={() => setEditingName(true)} />
           <Row icon="notifications-outline" label="Notifications" onPress={soon("Notifications")} />
           <Row icon="lock-closed-outline" label="Privacy & Security" onPress={soon("Privacy & Security")} last />
         </Section>
@@ -164,13 +250,29 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 2,
   },
-  profileName: {
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     marginTop: 14,
+    paddingHorizontal: 20,
+  },
+  profileName: {
+    flexShrink: 1,
     fontSize: 20,
     fontWeight: "700",
     color: "#17201C",
   },
+  editIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: GREEN_TINT,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   profileEmail: { marginTop: 3, fontSize: 14, color: MUTED },
+  profileHint: { marginTop: 10, fontSize: 12, color: colors.textMuted },
 
   section: { marginBottom: 22 },
   sectionTitle: {
@@ -207,5 +309,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   rowLabel: { flex: 1, fontSize: 16, fontWeight: "500", color: "#25302B" },
-  rowValue: { fontSize: 14, color: MUTED },
+  rowValue: { maxWidth: "45%", fontSize: 14, color: MUTED },
 });

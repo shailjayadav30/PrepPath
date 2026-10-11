@@ -40,17 +40,45 @@ export async function apiJson<T>(
 
 // Multipart upload of a picked PDF as form field "pdffile" (what multer expects),
 // plus any extra text fields (e.g. spaceId)
-export async function uploadPdf<T>(
+export function uploadPdf<T>(
   path: string,
   file: DocumentPickerAsset,
+  fields: Record<string, string> = {},
+): Promise<T> {
+  return uploadFile<T>(
+    path,
+    "pdffile",
+    {
+      uri: file.uri,
+      name: file.name || "syllabus.pdf",
+      type: file.mimeType || "application/pdf",
+      file: file.file,
+    },
+    fields,
+  );
+}
+
+export type UploadableFile = {
+  uri: string;
+  name: string;
+  type: string;
+  // The browser File, on web
+  file?: Blob | null;
+};
+
+// Multipart upload of one file under `field`, plus any extra text fields
+export async function uploadFile<T>(
+  path: string,
+  field: string,
+  file: UploadableFile,
   fields: Record<string, string> = {},
 ): Promise<T> {
   const url = `${BASE_URL}/api${path}`;
 
   if (Platform.OS === "web") {
-    if (!file.file) throw new Error("No file blob available for web upload");
+    const blob = file.file ?? (await (await fetch(file.uri)).blob());
     const formData = new FormData();
-    formData.append("pdffile", file.file, file.name);
+    formData.append(field, blob, file.name);
     for (const [key, value] of Object.entries(fields)) formData.append(key, value);
     const res = await fetch(url, {
       method: "POST",
@@ -85,11 +113,7 @@ export async function uploadPdf<T>(
     xhr.onerror = () => reject(new Error("Network request failed"));
 
     const formData = new FormData();
-    formData.append("pdffile", {
-      uri: file.uri,
-      name: file.name || "syllabus.pdf",
-      type: file.mimeType || "application/pdf",
-    } as any);
+    formData.append(field, { uri: file.uri, name: file.name, type: file.type } as any);
     for (const [key, value] of Object.entries(fields)) formData.append(key, value);
     xhr.send(formData);
   });
