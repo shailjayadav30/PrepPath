@@ -119,6 +119,50 @@ export type GenerateResponse = {
   spaceId: string;
   results: GenerateResult[];
 };
+// A stopwatch study session on a roadmap (GET /api/study-sessions/active, ...)
+export type StudySession = {
+  id: string;
+  roadmapId: string | null; // null once the roadmap is deleted
+  roadmapName: string;
+  status: "ACTIVE" | "PAUSED" | "COMPLETED";
+  running: boolean;
+  elapsedSeconds: number; // as of the response
+  startedAt: string;
+  endedAt: string | null;
+  endedOnDay: string | null;
+  // Items ticked while this session was open
+  topicIds: string[];
+  subTopicIds: string[];
+  topicsCompleted: number;
+  subTopicsCompleted: number;
+};
+
+export type Streak = { current: number; longest: number; studiedToday: boolean };
+
+// POST /api/study-sessions/:id/end
+export type EndSessionResponse = {
+  session: StudySession;
+  countsTowardStreak: boolean;
+  streak: Streak;
+};
+
+export type ProgressDay = {
+  day: string; // "2026-10-12"
+  seconds: number;
+  sessions: number;
+  topics: number;
+  subTopics: number;
+};
+
+// GET /api/progress
+export type ProgressData = {
+  today: ProgressDay;
+  days: ProgressDay[]; // oldest first, ending today
+  streak: Streak;
+  studyDays: string[];
+  recentSessions: Omit<StudySession, "topicIds" | "subTopicIds" | "running">[];
+};
+
 export type RoadmapCheckBoxProps = {
   onPress: () => void;
   size?: number;

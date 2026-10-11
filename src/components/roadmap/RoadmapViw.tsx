@@ -31,6 +31,8 @@ export type RoadmapViewProps = {
   ) => void;
   // Shown when the roadmap's syllabus PDF can be opened
   onViewPdf?: () => void;
+  // Topics/subtopics ticked during the open study session (marked "This session")
+  sessionItemIds?: Set<string>;
 };
 
 type CheckState = "checked" | "partial" | "none";
@@ -97,6 +99,15 @@ function MiniBar({ percent }: { percent: number }) {
   );
 }
 
+function SessionTag() {
+  return (
+    <View style={styles.sessionTag}>
+      <Ionicons name="time" size={10} color={colors.primaryDark} />
+      <Text style={styles.sessionTagText}>This session</Text>
+    </View>
+  );
+}
+
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <View style={styles.stat}>
@@ -109,10 +120,12 @@ function Stat({ value, label }: { value: string; label: string }) {
 /* ---------- SubTopic ---------- */
 function SubTopicRow({
   subTopic,
+  inSession,
   onToggle,
   onDelete,
 }: {
   subTopic: SubTopic;
+  inSession: boolean;
   onToggle: () => void;
   onDelete: () => void;
 }) {
@@ -128,9 +141,12 @@ function SubTopicRow({
         onPress={onToggle}
         label={subTopic.name}
       />
-      <Text style={[styles.subText, subTopic.completed && styles.doneText]}>
-        {subTopic.name}
-      </Text>
+      <View style={styles.flex}>
+        <Text style={[styles.subText, subTopic.completed && styles.doneText]}>
+          {subTopic.name}
+        </Text>
+        {inSession && <SessionTag />}
+      </View>
     </Pressable>
   );
 }
@@ -139,6 +155,7 @@ function SubTopicRow({
 function TopicItem({
   topic,
   last,
+  sessionItemIds,
   onToggle,
   onDelete,
   onToggleSubTopic,
@@ -146,6 +163,7 @@ function TopicItem({
 }: {
   topic: Topic;
   last: boolean;
+  sessionItemIds?: Set<string>;
   onToggle: () => void;
   onDelete: () => void;
   onToggleSubTopic: (subTopicId: string) => void;
@@ -182,6 +200,7 @@ function TopicItem({
               {doneSubs} of {subs.length} subtopics
             </Text>
           )}
+          {sessionItemIds?.has(topic.id) && <SessionTag />}
         </View>
         {hasSubs && (
           <Ionicons
@@ -198,6 +217,7 @@ function TopicItem({
             <SubTopicRow
               key={s.id}
               subTopic={s}
+              inSession={!!sessionItemIds?.has(s.id)}
               onToggle={() => onToggleSubTopic(s.id)}
               onDelete={() => onDeleteSubTopic(s.id)}
             />
@@ -290,6 +310,7 @@ function UnitCard({
               key={t.id}
               topic={t}
               last={i === unit.topics.length - 1}
+              sessionItemIds={props.sessionItemIds}
               onToggle={() => props.onToggleTopic(unit.id, t.id)}
               onDelete={() => props.onDeleteTopic(unit.id, t.id)}
               onToggleSubTopic={(sid) =>
@@ -575,5 +596,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   checkboxRound: { width: 20, height: 20, borderRadius: 10 },
+  sessionTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 3,
+    marginTop: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primaryTint,
+  },
+  sessionTagText: { fontSize: 10, fontWeight: "700", color: colors.primaryDark },
   checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
 });

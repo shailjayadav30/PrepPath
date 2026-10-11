@@ -14,7 +14,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { RoadmapSummary } from "../../../types/roadmapTypes";
+import { ProgressData, RoadmapSummary } from "../../../types/roadmapTypes";
+import { formatDuration, plural, studyApi } from "@/lib/studySession";
 
 const greeting = () => {
   const hour = new Date().getHours();
@@ -35,6 +36,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<ProgressData | null>(null);
   const getRoadmap = useCallback(async () => {
     setError(null);
     if (!userId) {
@@ -85,16 +87,27 @@ export default function Index() {
     }
   }, [userId]);
 
+  // Streak and today's study for the greeting; Home still works without it
+  const loadProgress = useCallback(async () => {
+    try {
+      setProgress(await studyApi.progress(1));
+    } catch (err) {
+      console.error("Error loading progress:", err);
+    }
+  }, []);
+
   // Refetch every time Home comes into view, so follow changes made elsewhere show up
   useFocusEffect(
     useCallback(() => {
       getRoadmap();
-    }, [getRoadmap]),
+      loadProgress();
+    }, [getRoadmap, loadProgress]),
   );
 
   const onRefresh = () => {
     setRefreshing(true);
     getRoadmap();
+    loadProgress();
   };
 
   const openRoadmap = (id: string) => {
@@ -145,17 +158,42 @@ export default function Index() {
   const doneTopics = roadmaps.reduce((n, r) => n + r.progress.completedTopics, 0);
   const overall = totalTopics ? Math.round((doneTopics / totalTopics) * 100) : 0;
 
+  const streak = progress?.streak;
+  const todayStudy = progress?.today;
+
   const greetingBlock = (
     <View style={styles.greeting}>
-      <Text style={styles.greetingTitle}>
-        {greeting()}
-        {firstName ? `, ${firstName}` : ""} 👋
-      </Text>
+      <View style={styles.greetingRow}>
+        <Text style={[styles.greetingTitle, { flex: 1 }]}>
+          {greeting()}
+          {firstName ? `, ${firstName}` : ""} 👋
+        </Text>
+        {streak && (
+          <TouchableOpacity
+            style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}
+            onPress={() => router.push("/(tabs)/progress")}
+            activeOpacity={0.8}
+            accessibilityLabel={`${streak.current} day streak`}
+          >
+            <Text style={styles.streakFlame}>🔥</Text>
+            <Text style={styles.streakCount}>{streak.current}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       <Text style={styles.greetingSub}>
         {roadmaps.length > 0
           ? "Pick up where you left off."
           : "Let's get your study plan going."}
       </Text>
+      {streak && todayStudy && (
+        <Text style={styles.todayLine}>
+          {streak.studiedToday
+            ? `Today: ${formatDuration(todayStudy.seconds)} studied · ${plural(todayStudy.topics, "topic")} done`
+            : streak.current > 0
+              ? "Study today to keep your streak going"
+              : "Start the study timer in a subject to begin a streak"}
+        </Text>
+      )}
     </View>
   );
 
@@ -328,6 +366,28 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  greetingRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  streakChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    backgroundColor: "#FFF4E5",
+    borderWidth: 1,
+    borderColor: "#FFE1B8",
+  },
+  // Not studied yet today: the streak is still alive but needs today's study
+  streakChipIdle: { backgroundColor: colors.card, borderColor: colors.border },
+  streakFlame: { fontSize: 16 },
+  streakCount: { fontSize: 16, fontWeight: "800", color: "#8A4B00" },
+  todayLine: {
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.primaryDark,
   },
 
   // Summary

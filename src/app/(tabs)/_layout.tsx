@@ -45,10 +45,10 @@ export default function TabseLayout() {
           ),
         }}
       />
-      {/* <Tabs.Screen
-        name="analytics"
+      <Tabs.Screen
+        name="progress"
         options={{
-          title: "Analytics",
+          title: "Progress",
           headerShown: false,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
@@ -58,7 +58,7 @@ export default function TabseLayout() {
             />
           ),
         }}
-      /> */}
+      />
       <Tabs.Screen
         name="settings"
         options={{

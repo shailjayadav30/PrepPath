@@ -12,8 +12,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Roadmap } from "../../../../types/roadmapTypes";
+import { Roadmap, StudySession } from "../../../../types/roadmapTypes";
 import RoadmapView from "@/components/roadmap/RoadmapViw";
+import StudyTimer from "@/components/study/StudyTimer";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { colors, radius } from "@/lib/theme";
 
@@ -22,6 +23,9 @@ export default function RoadmapDetail() {
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  // Study session on this roadmap: refreshed after each tick; its items get marked
+  const [timerRefresh, setTimerRefresh] = useState(0);
+  const [session, setSession] = useState<StudySession | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -188,6 +192,7 @@ export default function RoadmapDetail() {
       if (!response.ok) {
         throw new Error(`Failed to update progress (${response.status})`);
       }
+      setTimerRefresh((k) => k + 1);
     } catch (error) {
       console.error("Failed to update progress:", error);
       setRoadmap(snapshot);
@@ -232,6 +237,10 @@ export default function RoadmapDetail() {
       </SafeAreaView>
     );
   }
+
+  const sessionItemIds = session
+    ? new Set([...session.topicIds, ...session.subTopicIds])
+    : undefined;
 
   const setDone = (
     unitId: string,
@@ -283,8 +292,14 @@ export default function RoadmapDetail() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
+        <StudyTimer
+          roadmapId={roadmap.id}
+          refreshKey={timerRefresh}
+          onSessionChange={setSession}
+        />
         <RoadmapView
           roadmap={roadmap}
+          sessionItemIds={sessionItemIds}
           onToggleUnit={(unitId) => {
             const unit = roadmap.units.find((u) => u.id === unitId);
             if (!unit) return;
