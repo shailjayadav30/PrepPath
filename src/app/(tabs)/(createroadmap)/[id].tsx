@@ -5,13 +5,17 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  StyleSheet,
   TouchableOpacity,
   View,
   Text,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { Roadmap } from "../../../../types/roadmapTypes";
 import RoadmapView from "@/components/roadmap/RoadmapViw";
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import { colors, radius } from "@/lib/theme";
 
 export default function RoadmapDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -194,29 +198,38 @@ export default function RoadmapDetail() {
   const viewPdf = (uploadId: string) =>
     router.push({ pathname: "/(tabs)/(createroadmap)/pdf", params: { uploadId } });
 
+  const header = (
+    <ScreenHeader title="Roadmap" fallback="/(tabs)/(createroadmap)/allRoadmap" />
+  );
+
   if (error) {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 12,
-        }}
-      >
-        <Text style={{ color: "#C45B5B" }}>{error}</Text>
-        <TouchableOpacity onPress={() => setReloadKey((k) => k + 1)}>
-          <Text style={{ color: "#16A673", fontWeight: "600" }}>Try again</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.screen}>
+        {header}
+        <View style={styles.center}>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.danger} />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryBtn}
+            onPress={() => setReloadKey((k) => k + 1)}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.retryText}>Try again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!roadmap) {
     return (
-      <View style={{ flex: 1, justifyContent: "center" }}>
-        <ActivityIndicator size="large" color="#16A673" />
-      </View>
+      <SafeAreaView style={styles.screen}>
+        {header}
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading roadmap...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -264,8 +277,12 @@ export default function RoadmapDetail() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      {header}
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <RoadmapView
           roadmap={roadmap}
           onToggleUnit={(unitId) => {
@@ -313,3 +330,18 @@ export default function RoadmapDetail() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 20 },
+  scroll: { paddingBottom: 24 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
+  loadingText: { fontSize: 14, color: colors.textSecondary },
+  errorText: { fontSize: 15, color: colors.textSecondary },
+  retryBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+  },
+  retryText: { color: colors.white, fontWeight: "700" },
+});

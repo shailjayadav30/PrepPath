@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { colors } from "@/lib/theme";
 
 const GREEN = "#16A673";
 const GREEN_DARK = "#0F5132";
@@ -142,7 +143,7 @@ const Settings = () => {
 export default Settings;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FAF9F6" },
+  container: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
 
   header: { marginTop: 12, marginBottom: 22 },

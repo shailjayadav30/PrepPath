@@ -1,15 +1,17 @@
 import { authClient } from "@/lib/auth-client";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { colors } from "@/lib/theme";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getInitials } from "../../../types/roadmapTypes";
 
-const GREEN = "#16A673";
-const GREEN_DARK = "#0F5132";
+const logo = require("../../../assets/images/icon.png");
 
 const HomeHeader = () => {
   const { data: session } = authClient.useSession();
+  const router = useRouter();
 
   const initials = getInitials(session?.user.name);
   const image = session?.user.image || undefined;
@@ -19,31 +21,30 @@ const HomeHeader = () => {
       <View style={styles.topBar}>
         {/* Left */}
         <View style={styles.topBarLeft}>
-          <View style={styles.logoBox}>
-            <Feather name="check-square" size={18} color="#FFFFFF" />
-          </View>
-
+          <Image source={logo} style={styles.logo} contentFit="cover" />
           <Text style={styles.brand}>Shinro</Text>
         </View>
 
         {/* Right */}
-        <View style={styles.topBarRight}>
-          <Feather name="bell" size={20} color="#111827" style={styles.bell} />
-
-          <View style={styles.avatar}>
-            {image ? (
-              <Image
-                source={{ uri: image }}
-                style={styles.avatarImage}
-                contentFit="cover"
-              />
-            ) : initials ? (
-              <Text style={styles.initials}>{initials}</Text>
-            ) : (
-              <Ionicons name="person" size={19} color={GREEN} />
-            )}
-          </View>
-        </View>
+        <TouchableOpacity
+          style={styles.avatar}
+          onPress={() => router.push("/(tabs)/settings")}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Open settings"
+        >
+          {image ? (
+            <Image
+              source={{ uri: image }}
+              style={styles.avatarImage}
+              contentFit="cover"
+            />
+          ) : initials ? (
+            <Text style={styles.initials}>{initials}</Text>
+          ) : (
+            <Ionicons name="person" size={19} color={colors.primary} />
+          )}
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -53,16 +54,15 @@ export default HomeHeader;
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.bg,
   },
 
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
 
   topBarLeft: {
@@ -71,35 +71,28 @@ const styles = StyleSheet.create({
     gap: 10,
   },
 
-  logoBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: GREEN,
-    alignItems: "center",
-    justifyContent: "center",
+  logo: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   brand: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  topBarRight: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  bell: {
-    marginRight: 14,
+    fontSize: 19,
+    fontWeight: "800",
+    color: colors.primaryDark,
+    letterSpacing: -0.3,
   },
 
   avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "#E8F5EF",
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.primaryTint,
+    borderWidth: 2,
+    borderColor: colors.white,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -111,8 +104,8 @@ const styles = StyleSheet.create({
   },
 
   initials: {
-    fontSize: 16,
-    color: GREEN_DARK,
+    fontSize: 15,
+    color: colors.primaryDark,
     fontWeight: "700",
   },
 });

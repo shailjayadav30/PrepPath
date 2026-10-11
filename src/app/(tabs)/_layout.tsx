@@ -1,13 +1,20 @@
 import HomeHeader from "@/components/header/homeHeader";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { colors } from "@/lib/theme";
 
 export default function TabseLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#16A673",
-        tabBarInactiveTintColor: "#9CA3AF",
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        sceneStyle: { backgroundColor: colors.bg },
       }}
     >
       <Tabs.Screen
@@ -18,7 +25,7 @@ export default function TabseLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "home" : "home-outline"}
-              size={18}
+              size={22}
               color={color}
             />
           ),
@@ -32,7 +39,7 @@ export default function TabseLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "map" : "map-outline"}
-              size={18}
+              size={22}
               color={color}
             />
           ),
@@ -46,7 +53,7 @@ export default function TabseLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "stats-chart" : "stats-chart-outline"}
-              size={18}
+              size={22}
               color={color}
             />
           ),
@@ -60,7 +67,7 @@ export default function TabseLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "settings" : "settings-outline"}
-              size={18}
+              size={22}
               color={color}
             />
           ),

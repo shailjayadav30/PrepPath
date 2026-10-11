@@ -1,26 +1,21 @@
 import { Stack } from "expo-router";
+import { colors } from "@/lib/theme";
 
+// Roadmap tab: spaces list -> space -> add roadmap / roadmap detail
 export default function RoadmapLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-
-      <Stack.Screen
-        name="[id]"
-        options={({ route }) => ({
-          headerShown: false,
-          title: `Roadmap: ${(route.params as { id?: string } | undefined)?.id ?? "Detail"}`,
-        })}
-      />
-
-      <Stack.Screen
-        name="allRoadmap"
-        options={() => ({
-          headerShown: false,
-        })}
-      />
-
-      <Stack.Screen name="pdf" options={{ headerShown: false }} />
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="space/[spaceId]" />
+      <Stack.Screen name="create" />
+      <Stack.Screen name="[id]" />
+      <Stack.Screen name="allRoadmap" />
+      <Stack.Screen name="pdf" />
     </Stack>
   );
 }
