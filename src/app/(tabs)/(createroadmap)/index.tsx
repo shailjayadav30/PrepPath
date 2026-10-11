@@ -17,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { colors } from "@/lib/theme";
 import type {
   AnalyzeResponse,
   AnalyzeSubject,
@@ -680,7 +681,7 @@ function Stat({ value, label }: { value: number; label: string }) {
 /* ---------------- styles ---------------- */
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#FFFFFF" },
+  safeArea: { flex: 1, backgroundColor: colors.bg },
   scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 48 },
 
   header: {

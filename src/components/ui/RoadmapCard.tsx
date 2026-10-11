@@ -2,12 +2,12 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { RoadmapSummary } from "../../../types/roadmapTypes";
 import { Ionicons } from "@expo/vector-icons";
+import { colors, radius, shadow } from "@/lib/theme";
 
 type Prop = {
   roadmap: RoadmapSummary;
   onPress: () => void;
   onDelete?: () => void;
-  // isFollowing?: () => void;
   onToggleFollow?: () => void;
 };
 
@@ -15,72 +15,88 @@ export default function RoadmapCard({
   roadmap,
   onPress,
   onDelete,
-  onToggleFollow
+  onToggleFollow,
 }: Prop) {
   const progress = roadmap.progress?.percent ?? 0;
+  const done = roadmap.progress?.completedTopics ?? 0;
+  const total = roadmap.progress?.totalTopics ?? 0;
+  const following = roadmap.isFollowing;
+
   return (
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={onPress}
-      style={styles.container}
+      style={[styles.container, following && styles.containerFollowing]}
     >
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.titleSection}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="book-outline" size={22} color="#16A673" />
-          </View>
-
-          <View style={styles.titleWrapper}>
-            <Text style={styles.text} numberOfLines={2}>
-              {roadmap.name}
-            </Text>
-
-            <Text style={styles.subtitle} numberOfLines={1}>
-              {roadmap.subjectGroup ?? roadmap.examOrBoard ?? "Your learning roadmap"}
-            </Text>
-          </View>
+        <View style={styles.iconContainer}>
+          <Ionicons name="book" size={20} color={colors.primary} />
         </View>
 
-        <View style={styles.delAct}>
-          <TouchableOpacity onPress={onDelete} hitSlop={10} activeOpacity={0.7}>
-            <Ionicons name="trash-outline" size={21} color="#C45B5B" />
-          </TouchableOpacity>
+        <View style={styles.titleWrapper}>
+          <Text style={styles.title} numberOfLines={2}>
+            {roadmap.name}
+          </Text>
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {roadmap.subjectGroup ?? roadmap.examOrBoard ?? "Your learning roadmap"}
+            {roadmap.unitCount ? ` · ${roadmap.unitCount} units` : ""}
+          </Text>
+        </View>
+
+        {onDelete && (
           <TouchableOpacity
-            onPress={onToggleFollow}
-            hitSlop={10}
+            onPress={onDelete}
+            hitSlop={8}
             activeOpacity={0.7}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${roadmap.name}`}
           >
-            <Text>
-            {roadmap.isFollowing ? "Following":"Follow"}</Text>
+            <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
           </TouchableOpacity>
-        </View>
+        )}
       </View>
 
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* Progress Section */}
+      {/* Progress */}
       <View style={styles.progressHeader}>
-        <Text style={styles.progressLabel}>Overall Progress</Text>
-
+        <Text style={styles.progressLabel}>
+          {progress === 100 ? "Completed 🎉" : `${done} of ${total} topics done`}
+        </Text>
         <Text style={styles.progressPercentage}>{progress}%</Text>
       </View>
-
-      {/* Progress Bar */}
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${progress}%` }]} />
       </View>
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          {progress === 100
-            ? "Roadmap completed! 🎉"
-            : "Keep going, you're making progress."}
-        </Text>
+        {onToggleFollow ? (
+          <TouchableOpacity
+            onPress={onToggleFollow}
+            hitSlop={6}
+            activeOpacity={0.8}
+            style={[styles.followBtn, following && styles.followBtnOn]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: following }}
+          >
+            <Ionicons
+              name={following ? "checkmark" : "add"}
+              size={16}
+              color={following ? colors.white : colors.primary}
+            />
+            <Text style={[styles.followText, following && styles.followTextOn]}>
+              {following ? "Following" : "Follow"}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View />
+        )}
 
-        <Ionicons name="arrow-up-right-box-outline" size={20} color="#16A673" />
+        <View style={styles.openRow}>
+          <Text style={styles.openText}>Open</Text>
+          <Ionicons name="arrow-forward" size={16} color={colors.primary} />
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -88,98 +104,53 @@ export default function RoadmapCard({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#E8EDE9",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderColor: colors.border,
+    ...shadow.card,
   },
+  containerFollowing: { borderColor: "#BFE6D6" },
 
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-
-  titleSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 12,
-  },
-
+  header: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   iconContainer: {
     width: 44,
     height: 44,
-    borderRadius: 12,
-    backgroundColor: "#E8F7F0",
+    borderRadius: 13,
+    backgroundColor: colors.primaryTint,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
   },
-
-  titleWrapper: {
-    flex: 1,
-  },
-
-  text: {
-    color: "#1E2D26",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-
-  subtitle: {
-    color: "#8A9690",
-    fontSize: 12,
-    marginTop: 4,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: "#EEF1EF",
-    marginVertical: 18,
+  titleWrapper: { flex: 1, paddingTop: 1 },
+  title: { color: colors.text, fontSize: 16, fontWeight: "700", lineHeight: 21 },
+  subtitle: { color: colors.textSecondary, fontSize: 12, marginTop: 3 },
+  iconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.bg,
   },
 
   progressHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginTop: 16,
+    marginBottom: 8,
   },
-
-  progressLabel: {
-    color: "#65736B",
-    fontSize: 13,
-    fontWeight: "500",
-  },
-
-  progressPercentage: {
-    color: "#16A673",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-
+  progressLabel: { color: colors.textSecondary, fontSize: 13 },
+  progressPercentage: { color: colors.primary, fontSize: 15, fontWeight: "800" },
   progressTrack: {
-    height: 9,
-    backgroundColor: "#E5EDE8",
-    borderRadius: 20,
+    height: 8,
+    backgroundColor: colors.primaryTint,
+    borderRadius: 4,
     overflow: "hidden",
   },
-
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#16A673",
-    borderRadius: 20,
-  },
+  progressFill: { height: "100%", backgroundColor: colors.primary, borderRadius: 4 },
 
   footer: {
     flexDirection: "row",
@@ -187,14 +158,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 14,
   },
-
-  footerText: {
-    color: "#8A9690",
-    fontSize: 12,
-  },
-  delAct: {
-    flexDirection: "column",
-    gap: 10,
+  followBtn: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 14,
+    height: 34,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
   },
+  followBtnOn: { backgroundColor: colors.primary },
+  followText: { fontSize: 13, fontWeight: "700", color: colors.primary },
+  followTextOn: { color: colors.white },
+  openRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  openText: { fontSize: 13, fontWeight: "700", color: colors.primary },
 });
