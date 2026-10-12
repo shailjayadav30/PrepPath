@@ -1,9 +1,18 @@
 import HomeHeader from "@/components/header/homeHeader";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/lib/theme";
 
+// Room for the icon and label, above the system navigation area. The default (49 + inset)
+// clips labels on phones with larger text/display size settings.
+const TAB_CONTENT_HEIGHT = 58;
+
 export default function TabseLayout() {
+  const insets = useSafeAreaInsets();
+  // Gesture-navigation phones can report no bottom inset; keep labels off the screen edge
+  const bottomPad = Math.max(insets.bottom, 8);
+
   return (
     <Tabs
       screenOptions={{
@@ -12,8 +21,12 @@ export default function TabseLayout() {
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
+          height: TAB_CONTENT_HEIGHT + bottomPad,
+          paddingTop: 6,
+          paddingBottom: bottomPad,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        tabBarItemStyle: { paddingVertical: 2 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600", marginTop: 2 },
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >
