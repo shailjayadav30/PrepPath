@@ -3,7 +3,9 @@ import { colors, radius, shadow } from "@/lib/theme";
 import NameModal from "@/components/ui/NameModal";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { authClient } from "@/lib/auth-client";
+import { useCachedValue, writeCache } from "@/lib/cache";
 import {
   ActivityIndicator,
   Alert,
@@ -25,18 +27,26 @@ export default function Spaces() {
   const [refreshing, setRefreshing] = useState(false);
   const [creating, setCreating] = useState(false);
 
+  // Last-loaded spaces show instantly on launch while the list refreshes
+  const { data: session } = authClient.useSession();
+  const cacheKey = session?.user.id ? `spaces:${session.user.id}` : null;
+  const fresh = useRef(false);
+  useCachedValue<Space[]>(cacheKey, setSpaces, () => fresh.current);
+
   const load = useCallback(async () => {
     setError(null);
     try {
       const data = await apiJson<{ spaces: Space[] }>("/spaces");
+      fresh.current = true;
       setSpaces(data.spaces ?? []);
+      if (cacheKey) writeCache(cacheKey, data.spaces ?? []);
     } catch (err) {
       console.error("Error loading spaces:", err);
       setError(errorMessage(err, "Couldn't load your spaces."));
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [cacheKey]);
 
   useFocusEffect(
     useCallback(() => {

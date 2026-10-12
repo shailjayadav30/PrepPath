@@ -48,3 +48,5 @@ example
 .env.development
 .env.production
 .env.test
+# Personal notes
+LOAD_TIME_NOTES.md

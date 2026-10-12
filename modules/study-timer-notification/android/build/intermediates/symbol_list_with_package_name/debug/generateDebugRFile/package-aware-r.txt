@@ -1,0 +1,2 @@
+expo.modules.studytimernotification
+drawable ic_stat_study_timer

@@ -1,136 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  AppState,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { errorMessage } from "@/lib/api";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors, radius, shadow } from "@/lib/theme";
-import { formatClock, plural, studyApi } from "@/lib/studySession";
-import SessionSummary from "./SessionSummary";
-import type { EndSessionResponse, StudySession } from "../../../types/roadmapTypes";
+import { formatClock, plural } from "@/lib/studySession";
+import { useStudyClock, useStudySession } from "./StudySessionProvider";
 
-type Props = {
-  roadmapId: string;
-  // Bump after each tick so the session's counts refresh
-  refreshKey: number;
-  // The open session on this roadmap (null otherwise), to mark items ticked in it
-  onSessionChange: (session: StudySession | null) => void;
-};
-
-// Stopwatch bar at the top of a roadmap: start, pause/resume, end (or discard)
-export default function StudyTimer({ roadmapId, refreshKey, onSessionChange }: Props) {
-  const [session, setSession] = useState<StudySession | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [summary, setSummary] = useState<EndSessionResponse | null>(null);
-  // elapsedSeconds is as of the response; add the time since while running
-  const receivedAt = useRef(Date.now());
-  const [now, setNow] = useState(Date.now());
-
-  const apply = useCallback(
-    (next: StudySession | null) => {
-      receivedAt.current = Date.now();
-      setNow(Date.now());
-      setSession(next);
-      onSessionChange(next && next.roadmapId === roadmapId ? next : null);
-    },
-    [onSessionChange, roadmapId],
-  );
-
-  const load = useCallback(async () => {
-    try {
-      const { session } = await studyApi.active();
-      apply(session);
-    } catch (err) {
-      console.error("Error loading study session:", err);
-    } finally {
-      setLoaded(true);
-    }
-  }, [apply]);
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
-
-  // Counts change as items are ticked
-  useEffect(() => {
-    if (refreshKey > 0) load();
-  }, [refreshKey, load]);
-
-  // Coming back to the app: resync the clock with the server
-  useEffect(() => {
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") load();
-    });
-    return () => sub.remove();
-  }, [load]);
-
-  const running = !!session?.running;
-  useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [running]);
-
-  const elapsed = session
-    ? session.elapsedSeconds + (running ? (now - receivedAt.current) / 1000 : 0)
-    : 0;
-
-  const act = async (fn: () => Promise<void>, failTitle: string) => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await fn();
-    } catch (err) {
-      Alert.alert(failTitle, errorMessage(err, "Please try again."));
-      load();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const start = () =>
-    act(async () => apply((await studyApi.start(roadmapId)).session), "Couldn't start the timer");
-  const pause = () =>
-    act(async () => apply((await studyApi.pause(session!.id)).session), "Couldn't pause");
-  const resume = () =>
-    act(async () => apply((await studyApi.resume(session!.id)).session), "Couldn't resume");
-  const end = () =>
-    act(async () => {
-      const result = await studyApi.end(session!.id);
-      apply(null);
-      setSummary(result);
-    }, "Couldn't end the session");
-  const discard = () =>
-    Alert.alert(
-      "Discard session?",
-      "This session's time won't be saved. Anything you ticked stays ticked on the roadmap.",
-      [
-        { text: "Keep studying", style: "cancel" },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: () =>
-            act(async () => {
-              await studyApi.discard(session!.id);
-              apply(null);
-            }, "Couldn't discard the session"),
-        },
-      ],
-    );
-
-  const summaryModal = (
-    <SessionSummary result={summary} onClose={() => setSummary(null)} />
-  );
+// Stopwatch card at the top of a roadmap: start, pause/resume, end (or discard).
+// The session itself lives in StudySessionProvider, shared with the pill above the tabs.
+export default function StudyTimer({ roadmapId }: { roadmapId: string }) {
+  const { session, loaded, busy, start, pause, resume, end, discard } = useStudySession();
+  const elapsed = useStudyClock();
 
   if (!loaded) {
     return <View style={[styles.card, styles.placeholder]} />;
@@ -162,7 +40,6 @@ export default function StudyTimer({ roadmapId, refreshKey, onSessionChange }: P
           </TouchableOpacity>
         </View>
         <Text style={styles.hint}>End that session to start one here.</Text>
-        {summaryModal}
       </View>
     );
   }
@@ -184,7 +61,7 @@ export default function StudyTimer({ roadmapId, refreshKey, onSessionChange }: P
         </View>
         <TouchableOpacity
           style={styles.startBtn}
-          onPress={start}
+          onPress={() => start(roadmapId)}
           disabled={busy}
           activeOpacity={0.85}
         >
@@ -197,11 +74,11 @@ export default function StudyTimer({ roadmapId, refreshKey, onSessionChange }: P
             </>
           )}
         </TouchableOpacity>
-        {summaryModal}
       </View>
     );
   }
 
+  const running = session.running;
   const counts =
     session.topicsCompleted + session.subTopicsCompleted > 0
       ? `+${plural(session.topicsCompleted, "topic")} · ${plural(session.subTopicsCompleted, "subtopic")} this session`
@@ -250,7 +127,6 @@ export default function StudyTimer({ roadmapId, refreshKey, onSessionChange }: P
           )}
         </TouchableOpacity>
       </View>
-      {summaryModal}
     </View>
   );
 }
