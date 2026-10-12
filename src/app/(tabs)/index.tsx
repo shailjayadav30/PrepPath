@@ -3,7 +3,9 @@ import { colors, radius, shadow } from "@/lib/theme";
 import ProgressRing from "@/components/ui/ProgressRing";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { apiJson } from "@/lib/api";
+import { useCachedValue, writeCache } from "@/lib/cache";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,6 +18,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ProgressData, RoadmapSummary } from "../../../types/roadmapTypes";
 import { formatDuration, plural, studyApi } from "@/lib/studySession";
+
+type HomeCache = {
+  roadmaps: RoadmapSummary[];
+  hasAnyRoadmap: boolean;
+  progress: ProgressData | null;
+};
 
 const greeting = () => {
   const hour = new Date().getHours();
@@ -37,6 +45,30 @@ export default function Index() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressData | null>(null);
+  const cacheKey = userId ? `home:${userId}` : null;
+  // What Home last showed, saved on the device; `fresh` turns true once the server
+  // answered, so a slower cache read never overwrites newer data
+  const snapshot = useRef<HomeCache>({ roadmaps: [], hasAnyRoadmap: false, progress: null });
+  const fresh = useRef(false);
+
+  // Show the last-loaded Home right away on launch
+  useCachedValue<HomeCache>(
+    cacheKey,
+    (cached) => {
+      snapshot.current = cached;
+      setRoadmaps(cached.roadmaps);
+      setHasAnyRoadmap(cached.hasAnyRoadmap);
+      setProgress(cached.progress);
+      setLoading(false);
+    },
+    () => fresh.current,
+  );
+
+  const saveSnapshot = (update: Partial<HomeCache>) => {
+    snapshot.current = { ...snapshot.current, ...update };
+    if (cacheKey) writeCache(cacheKey, snapshot.current);
+  };
+
   const getRoadmap = useCallback(async () => {
     setError(null);
     if (!userId) {
@@ -44,57 +76,40 @@ export default function Index() {
       return;
     }
     try {
-      const cookie = await authClient.getCookie();
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap/isfollowing`,
-        {
-          method: "GET",
-          headers: { Cookie: cookie ?? "" },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch roadmaps");
-      }
-
-      const data = await response.json();
-      const following: RoadmapSummary[] = data.roadmaps ?? [];
+      // Both at once: whether they have any roadmap only matters when they follow none
+      const [followingData, anyData] = await Promise.all([
+        apiJson<{ roadmaps: RoadmapSummary[] }>("/roadmap/isfollowing"),
+        apiJson<{ roadmap: RoadmapSummary[] }>("/roadmap?limit=1"),
+      ]);
+      const following = followingData.roadmaps ?? [];
+      const hasAny = following.length > 0 || (anyData.roadmap ?? []).length > 0;
+      fresh.current = true;
       setRoadmaps(following);
-
-      // Not following anything: check if there are roadmaps they could follow
-      if (following.length === 0) {
-        const allResponse = await fetch(
-          `${process.env.EXPO_PUBLIC_BASE_URL}/api/roadmap?limit=1`,
-          {
-            method: "GET",
-            headers: { Cookie: cookie ?? "" },
-          },
-        );
-        if (!allResponse.ok) {
-          throw new Error("Failed to fetch roadmaps");
-        }
-        const allData = await allResponse.json();
-        setHasAnyRoadmap((allData.roadmap ?? []).length > 0);
-      } else {
-        setHasAnyRoadmap(true);
-      }
+      setHasAnyRoadmap(hasAny);
+      saveSnapshot({ roadmaps: following, hasAnyRoadmap: hasAny });
     } catch (err) {
       console.error("Error fetching roadmaps:", err);
-      setError("Couldn't load your roadmaps.");
+      // Keep showing cached roadmaps if there are any; only an empty screen gets the error
+      if (snapshot.current.roadmaps.length === 0) setError("Couldn't load your roadmaps.");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
+    // saveSnapshot only reads refs and cacheKey (derived from userId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   // Streak and today's study for the greeting; Home still works without it
   const loadProgress = useCallback(async () => {
     try {
-      setProgress(await studyApi.progress(1));
+      const next = await studyApi.progress(1);
+      setProgress(next);
+      saveSnapshot({ progress: next });
     } catch (err) {
       console.error("Error loading progress:", err);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   // Refetch every time Home comes into view, so follow changes made elsewhere show up
   useFocusEffect(

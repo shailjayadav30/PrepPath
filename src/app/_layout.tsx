@@ -22,7 +22,9 @@ export default function RootLayout() {
 function RootNavigator() {
   const { hasOnboarded } = useOnboarding();
   const { data: session, isPending } = authClient.useSession();
-  const isReady = !isPending && hasOnboarded !== null;
+  // The session saved on the device is enough to open the app; the server check keeps
+  // running and signs the user out if it's no longer valid. Only signed-out users wait.
+  const isReady = hasOnboarded !== null && (!isPending || !!session);
   const colorScheme = useColorScheme();
   const isLoggedIn = !!session;
 

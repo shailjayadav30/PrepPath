@@ -6,7 +6,9 @@ import WeekChart from "@/components/study/WeekChart";
 import { dayLabel } from "@/components/study/dates";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { authClient } from "@/lib/auth-client";
+import { useCachedValue, writeCache } from "@/lib/cache";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -25,17 +27,26 @@ export default function Progress() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Last-loaded progress shows instantly while it refreshes
+  const { data: session } = authClient.useSession();
+  const cacheKey = session?.user.id ? `progress:${session.user.id}` : null;
+  const fresh = useRef(false);
+  useCachedValue<ProgressData>(cacheKey, setData, () => fresh.current);
+
   const load = useCallback(async () => {
     setError(null);
     try {
-      setData(await studyApi.progress(7));
+      const next = await studyApi.progress(7);
+      fresh.current = true;
+      setData(next);
+      if (cacheKey) writeCache(cacheKey, next);
     } catch (err) {
       console.error("Error loading progress:", err);
       setError(errorMessage(err, "Couldn't load your progress."));
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [cacheKey]);
 
   useFocusEffect(
     useCallback(() => {
