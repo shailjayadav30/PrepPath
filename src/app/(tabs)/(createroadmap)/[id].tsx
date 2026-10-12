@@ -12,9 +12,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Roadmap, StudySession } from "../../../../types/roadmapTypes";
+import { Roadmap } from "../../../../types/roadmapTypes";
 import RoadmapView from "@/components/roadmap/RoadmapViw";
 import StudyTimer from "@/components/study/StudyTimer";
+import { useStudySession } from "@/components/study/StudySessionProvider";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { colors, radius } from "@/lib/theme";
 
@@ -23,9 +24,8 @@ export default function RoadmapDetail() {
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  // Study session on this roadmap: refreshed after each tick; its items get marked
-  const [timerRefresh, setTimerRefresh] = useState(0);
-  const [session, setSession] = useState<StudySession | null>(null);
+  // Shared study session: refreshed after each tick so its counts and marks stay current
+  const { session: studySession, refresh: refreshSession } = useStudySession();
   const router = useRouter();
 
   useEffect(() => {
@@ -192,7 +192,7 @@ export default function RoadmapDetail() {
       if (!response.ok) {
         throw new Error(`Failed to update progress (${response.status})`);
       }
-      setTimerRefresh((k) => k + 1);
+      refreshSession();
     } catch (error) {
       console.error("Failed to update progress:", error);
       setRoadmap(snapshot);
@@ -238,6 +238,8 @@ export default function RoadmapDetail() {
     );
   }
 
+  // Items ticked during the open session, when it's on this roadmap
+  const session = studySession?.roadmapId === roadmap.id ? studySession : null;
   const sessionItemIds = session
     ? new Set([...session.topicIds, ...session.subTopicIds])
     : undefined;
@@ -292,11 +294,7 @@ export default function RoadmapDetail() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <StudyTimer
-          roadmapId={roadmap.id}
-          refreshKey={timerRefresh}
-          onSessionChange={setSession}
-        />
+        <StudyTimer roadmapId={roadmap.id} />
         <RoadmapView
           roadmap={roadmap}
           sessionItemIds={sessionItemIds}
