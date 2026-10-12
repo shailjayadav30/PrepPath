@@ -10,7 +10,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { errorMessage } from "@/lib/api";
+import { ApiError, errorMessage } from "@/lib/api";
+
+// Matches the server: shorter sessions aren't saved
+const MIN_SESSION_SECONDS = 60;
 import { colors, radius, shadow } from "@/lib/theme";
 import { formatClock, plural, studyApi } from "@/lib/studySession";
 import SessionSummary from "./SessionSummary";
@@ -104,27 +107,51 @@ export default function StudyTimer({ roadmapId, refreshKey, onSessionChange }: P
     act(async () => apply((await studyApi.pause(session!.id)).session), "Couldn't pause");
   const resume = () =>
     act(async () => apply((await studyApi.resume(session!.id)).session), "Couldn't resume");
-  const end = () =>
+  const discardNow = () =>
     act(async () => {
-      const result = await studyApi.end(session!.id);
+      await studyApi.discard(session!.id);
       apply(null);
-      setSummary(result);
+    }, "Couldn't discard the session");
+
+  // Started and stopped by accident: nothing to save, so offer to keep going or discard
+  const tooShort = () =>
+    Alert.alert(
+      "Too short to save",
+      "Sessions under 1 minute aren't saved. Keep studying, or discard this one. Anything you ticked stays ticked on the roadmap.",
+      [
+        { text: "Keep studying", style: "cancel" },
+        { text: "Discard", style: "destructive", onPress: discardNow },
+      ],
+    );
+
+  const end = () => {
+    if (elapsed < MIN_SESSION_SECONDS) {
+      tooShort();
+      return;
+    }
+    act(async () => {
+      try {
+        const result = await studyApi.end(session!.id);
+        apply(null);
+        setSummary(result);
+      } catch (err) {
+        // The server's clock decides; it can disagree by a second or two
+        if (err instanceof ApiError && err.status === 422) {
+          tooShort();
+          return;
+        }
+        throw err;
+      }
     }, "Couldn't end the session");
+  };
+
   const discard = () =>
     Alert.alert(
       "Discard session?",
       "This session's time won't be saved. Anything you ticked stays ticked on the roadmap.",
       [
         { text: "Keep studying", style: "cancel" },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: () =>
-            act(async () => {
-              await studyApi.discard(session!.id);
-              apply(null);
-            }, "Couldn't discard the session"),
-        },
+        { text: "Discard", style: "destructive", onPress: discardNow },
       ],
     );
 
