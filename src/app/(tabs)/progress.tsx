@@ -1,9 +1,9 @@
 import { errorMessage } from "@/lib/api";
 import { colors, radius, shadow } from "@/lib/theme";
-import { formatDuration, plural, studyApi } from "@/lib/studySession";
+import { formatDuration, studyApi } from "@/lib/studySession";
 import StreakCalendar from "@/components/study/StreakCalendar";
 import WeekChart from "@/components/study/WeekChart";
-import { dayLabel } from "@/components/study/dates";
+import SessionRow from "@/components/study/SessionRow";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useRef, useState } from "react";
@@ -154,24 +154,7 @@ export default function Progress() {
         ) : (
           <View style={styles.list}>
             {recentSessions.map((s, i) => (
-              <View
-                key={s.id}
-                style={[styles.sessionRow, i < recentSessions.length - 1 && styles.divider]}
-              >
-                <View style={styles.sessionIcon}>
-                  <Ionicons name="book-outline" size={18} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.sessionName} numberOfLines={1}>
-                    {s.roadmapName}
-                  </Text>
-                  <Text style={styles.sessionMeta}>
-                    {s.endedOnDay ? dayLabel(s.endedOnDay) : ""} ·{" "}
-                    {plural(s.topicsCompleted, "topic")} · {plural(s.subTopicsCompleted, "subtopic")}
-                  </Text>
-                </View>
-                <Text style={styles.sessionTime}>{formatDuration(s.elapsedSeconds)}</Text>
-              </View>
+              <SessionRow key={s.id} session={s} last={i === recentSessions.length - 1} />
             ))}
           </View>
         )}
@@ -293,17 +276,4 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     overflow: "hidden",
   },
-  sessionRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
-  divider: { borderBottomWidth: 1, borderBottomColor: colors.divider },
-  sessionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    backgroundColor: colors.primaryTint,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sessionName: { fontSize: 15, fontWeight: "700", color: colors.text },
-  sessionMeta: { marginTop: 2, fontSize: 12, color: colors.textSecondary },
-  sessionTime: { fontSize: 15, fontWeight: "800", color: colors.primaryDark },
 });

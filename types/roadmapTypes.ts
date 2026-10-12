@@ -160,7 +160,19 @@ export type ProgressData = {
   days: ProgressDay[]; // oldest first, ending today
   streak: Streak;
   studyDays: string[];
-  recentSessions: Omit<StudySession, "topicIds" | "subTopicIds" | "running">[];
+  recentSessions: RecentSession[];
+};
+
+// What a session completed in one unit (name is null if the items were deleted since)
+export type SessionUnit = {
+  name: string | null;
+  topics: string[];
+  subTopics: { name: string; topicName: string | null }[];
+};
+
+export type RecentSession = Omit<StudySession, "topicIds" | "subTopicIds" | "running"> & {
+  // Missing on backends deployed before it was added
+  units?: SessionUnit[];
 };
 
 export type RoadmapCheckBoxProps = {
