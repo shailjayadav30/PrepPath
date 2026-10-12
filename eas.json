@@ -9,10 +9,13 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_BASE_URL": "https://stracker-two.vercel.app" }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": { "EXPO_PUBLIC_BASE_URL": "https://stracker-two.vercel.app" }
     }
   },
   "submit": {
