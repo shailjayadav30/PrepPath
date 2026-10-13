@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import SocialSignIn from "@/components/social-sign-in";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 export default function SignUp() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -143,11 +143,7 @@ export default function SignUp() {
 
           {/* Social row */}
           <View style={styles.socialRow}>
-            <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
-              {/* <Ionicons name="logo-google" size={18} color="#EA4335" />
-              <Text style={styles.socialButtonText}>Google</Text> */}
-              <SocialSignIn />
-            </TouchableOpacity>
+            <GoogleSignInButton />
           </View>
 
           {/* Sign up */}

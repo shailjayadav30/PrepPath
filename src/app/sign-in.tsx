@@ -8,10 +8,11 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 
 import { authClient } from "@/lib/auth-client"
 import { useRouter } from "expo-router";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -121,10 +122,7 @@ export default function SignIn() {
 
           {/* Social row */}
           <View style={styles.socialRow}>
-            <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
-              <Ionicons name="logo-google" size={18} color="#EA4335" />
-              <Text style={styles.socialButtonText}>Google</Text>
-            </TouchableOpacity>
+            <GoogleSignInButton />
           </View>
 
           {/* Sign up */}

@@ -4,6 +4,7 @@ import { apiJson, errorMessage, uploadFile } from "@/lib/api";
 import type { ImagePickerAsset } from "expo-image-picker";
 // import { useOnboarding } from "@/components/OnboardingProvider";
 import { authClient } from "@/lib/auth-client";
+import { signOutOfGoogle } from "@/lib/google-signin";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -142,6 +143,7 @@ const Settings = () => {
         text: "Sign out",
         style: "destructive",
         onPress: async () => {
+          await signOutOfGoogle();
           await authClient.signOut();
         },
       },
