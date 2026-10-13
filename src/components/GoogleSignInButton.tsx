@@ -7,16 +7,15 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  GoogleSignin,
-  isErrorWithCode,
-  isSuccessResponse,
-  statusCodes,
-} from "@react-native-google-signin/google-signin";
 import { authClient } from "@/lib/auth-client";
+import { getGoogleSignIn } from "@/lib/google-signin";
 
+// Renders nothing where Google sign-in can't run (Expo Go); see lib/google-signin
 export default function GoogleSignInButton() {
   const [loading, setLoading] = useState(false);
+  const google = getGoogleSignIn();
+  if (!google) return null;
+  const { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } = google;
 
   const handlePress = async () => {
     setLoading(true);

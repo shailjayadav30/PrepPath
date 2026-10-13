@@ -12,6 +12,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
+import { isGoogleSignInAvailable } from "@/lib/google-signin";
 export default function SignUp() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -134,17 +135,20 @@ export default function SignUp() {
             <Feather name="arrow-right" size={18} color="#FFFFFF" />
           </TouchableOpacity>
 
-          {/* Divider */}
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
-            <View style={styles.dividerLine} />
-          </View>
+          {/* Google sign-in (not in Expo Go, which lacks its native module) */}
+          {isGoogleSignInAvailable && (
+            <>
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
+                <View style={styles.dividerLine} />
+              </View>
 
-          {/* Social row */}
-          <View style={styles.socialRow}>
-            <GoogleSignInButton />
-          </View>
+              <View style={styles.socialRow}>
+                <GoogleSignInButton />
+              </View>
+            </>
+          )}
 
           {/* Sign up */}
           <View style={styles.signUpRow}>
