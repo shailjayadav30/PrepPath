@@ -9,10 +9,19 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+                "env": {
+        "EXPO_PUBLIC_BASE_URL": "https://stracker-two.vercel.app",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "916678151755-pig4au9hk9mkutpkq98biio8in7m9oc9.apps.googleusercontent.com"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_BASE_URL": "https://stracker-two.vercel.app",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "916678151755-pig4au9hk9mkutpkq98biio8in7m9oc9.apps.googleusercontent.com"
+      }
     }
   },
   "submit": {

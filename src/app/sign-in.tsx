@@ -8,10 +8,12 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 
 import { authClient } from "@/lib/auth-client"
 import { useRouter } from "expo-router";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
+import { isGoogleSignInAvailable } from "@/lib/google-signin";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -112,20 +114,20 @@ export default function SignIn() {
             <Feather name="arrow-right" size={18} color="#FFFFFF" />
           </TouchableOpacity>
 
-          {/* Divider */}
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
-            <View style={styles.dividerLine} />
-          </View>
+          {/* Google sign-in (not in Expo Go, which lacks its native module) */}
+          {isGoogleSignInAvailable && (
+            <>
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
+                <View style={styles.dividerLine} />
+              </View>
 
-          {/* Social row */}
-          <View style={styles.socialRow}>
-            <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
-              <Ionicons name="logo-google" size={18} color="#EA4335" />
-              <Text style={styles.socialButtonText}>Google</Text>
-            </TouchableOpacity>
-          </View>
+              <View style={styles.socialRow}>
+                <GoogleSignInButton />
+              </View>
+            </>
+          )}
 
           {/* Sign up */}
           <View style={styles.signUpRow}>

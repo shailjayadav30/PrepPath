@@ -6,8 +6,10 @@ import { authClient } from "@/lib/auth-client";
 import OnboardingProvider, {
   useOnboarding,
 } from "@/components/OnboardingProvider";
+import { configureGoogleSignIn } from "@/lib/google-signin";
 
 SplashScreen.preventAutoHideAsync();
+configureGoogleSignIn();
 
 export default function RootLayout() {
   //
