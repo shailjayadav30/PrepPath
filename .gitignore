@@ -50,3 +50,7 @@ example
 .env.test
 # Personal notes
 LOAD_TIME_NOTES.md
+
+# Gradle state/output of local Expo modules (created by local builds and the IDE)
+modules/*/android/.gradle/
+modules/*/android/build/
