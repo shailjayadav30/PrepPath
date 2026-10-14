@@ -3,5 +3,8 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  }
+  },
+  // The Java extension can't load Gradle files outside the app's android/ project
+  // (e.g. local Expo modules), so it reports false "plugin not found" errors there
+  "java.import.exclusions": ["**/node_modules/**", "**/modules/**"]
 }
