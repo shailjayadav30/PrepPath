@@ -1,0 +1,15 @@
+# CI: type-check every pull request into main, so broken code isn't merged
+name: CI
+
+on:
+  pull_request:
+    branches: ['main']
+
+jobs:
+  typecheck:
+    name: Type-check
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - name: TypeScript
+        run: npx tsc --noEmit
