@@ -5,10 +5,10 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   ScrollView,
 } from "react-native";
+import { toast } from "sonner-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
@@ -29,7 +29,9 @@ export default function SignIn() {
       password,
     });
     if (error) {
-      Alert.alert("Error in loogging in",`${error.message}`)
+      toast.error("Couldn't sign in", {
+        description: error.message ?? "Please check your email and password.",
+      });
       console.log("Login error:", error);
       return;
     }

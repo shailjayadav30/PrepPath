@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import { RoadmapSummary, Space } from "../../../../types/roadmapTypes";
 import RoadmapCard from "@/components/ui/RoadmapCard";
 import ScreenHeader from "@/components/ui/ScreenHeader";
@@ -55,9 +55,10 @@ export default function AllRoadmap() {
     try {
       await apiJson(`/roadmap/${roadmapId}`, { method: "DELETE" });
       setRoadmaps((list) => list.filter((r) => r.id !== roadmapId));
+      toast.success("Roadmap deleted");
     } catch (err) {
       console.log("Error in deleting roadmap", err);
-      Alert.alert("Couldn't delete roadmap", "Please try again.");
+      toast.error("Couldn't delete roadmap", { description: "Please try again." });
     }
   }
 
@@ -74,7 +75,7 @@ export default function AllRoadmap() {
       });
     } catch {
       setFollowing(!next);
-      Alert.alert("Couldn't update roadmap", "Please try again");
+      toast.error("Couldn't update roadmap", { description: "Please try again." });
     }
   }
 

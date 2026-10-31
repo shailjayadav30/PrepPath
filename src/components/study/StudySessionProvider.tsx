@@ -7,8 +7,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { Alert, AppState } from "react-native";
+import { AppState } from "react-native";
+import { toast } from "sonner-native";
 import { ApiError, errorMessage } from "@/lib/api";
+import { dialog } from "@/components/ui/AppDialog";
 import { studyApi } from "@/lib/studySession";
 import SessionSummary from "./SessionSummary";
 import { timerNotification } from "../../../modules/study-timer-notification";
@@ -101,7 +103,7 @@ export default function StudySessionProvider({ children }: PropsWithChildren) {
     try {
       await fn();
     } catch (err) {
-      Alert.alert(failTitle, errorMessage(err, "Please try again."));
+      toast.error(failTitle, { description: errorMessage(err, "Please try again.") });
       refresh();
     } finally {
       setBusy(false);
@@ -128,15 +130,18 @@ export default function StudySessionProvider({ children }: PropsWithChildren) {
     }, "Couldn't discard the session");
 
   // Started and stopped by accident: nothing to save, so offer to keep going or discard
-  const tooShort = () =>
-    Alert.alert(
-      "Too short to save",
-      "Sessions under 1 minute aren't saved. Keep studying, or discard this one. Anything you ticked stays ticked on the roadmap.",
-      [
-        { text: "Keep studying", style: "cancel" },
-        { text: "Discard", style: "destructive", onPress: discardNow },
-      ],
-    );
+  const tooShort = async () => {
+    const discardIt = await dialog.confirm({
+      title: "Too short to save",
+      message:
+        "Sessions under 1 minute aren't saved. Keep studying, or discard this one. Anything you ticked stays ticked on the roadmap.",
+      icon: "hourglass-outline",
+      cancelText: "Keep studying",
+      confirmText: "Discard",
+      destructive: true,
+    });
+    if (discardIt) discardNow();
+  };
 
   const end = () => {
     if (!session) return;
@@ -160,15 +165,17 @@ export default function StudySessionProvider({ children }: PropsWithChildren) {
     }, "Couldn't end the session");
   };
 
-  const discard = () =>
-    Alert.alert(
-      "Discard session?",
-      "This session's time won't be saved. Anything you ticked stays ticked on the roadmap.",
-      [
-        { text: "Keep studying", style: "cancel" },
-        { text: "Discard", style: "destructive", onPress: discardNow },
-      ],
-    );
+  const discard = async () => {
+    const discardIt = await dialog.confirm({
+      title: "Discard session?",
+      message:
+        "This session's time won't be saved. Anything you ticked stays ticked on the roadmap.",
+      cancelText: "Keep studying",
+      confirmText: "Discard",
+      destructive: true,
+    });
+    if (discardIt) discardNow();
+  };
 
   return (
     <StudySessionContext.Provider

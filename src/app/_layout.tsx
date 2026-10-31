@@ -2,7 +2,11 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useColorScheme } from "react-native";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Toaster } from "sonner-native";
 import { authClient } from "@/lib/auth-client";
+import { colors, radius } from "@/lib/theme";
+import { DialogHost } from "@/components/ui/AppDialog";
 import OnboardingProvider, {
   useOnboarding,
 } from "@/components/OnboardingProvider";
@@ -15,9 +19,28 @@ export default function RootLayout() {
   //
 
   return (
-    <OnboardingProvider>
-      <RootNavigator />
-    </OnboardingProvider>
+    // Gesture root: toasts can be swiped away
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <OnboardingProvider>
+        <RootNavigator />
+      </OnboardingProvider>
+      {/* App-wide feedback: toasts for messages, themed dialogs and menus for choices */}
+      <Toaster
+        position="top-center"
+        theme="light"
+        toastOptions={{
+          style: {
+            borderRadius: radius.md,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.card,
+          },
+          titleStyle: { color: colors.text, fontWeight: "700" },
+          descriptionStyle: { color: colors.textSecondary },
+        }}
+      />
+      <DialogHost />
+    </GestureHandlerRootView>
   );
 }
 

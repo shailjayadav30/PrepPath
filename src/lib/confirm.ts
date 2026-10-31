@@ -1,7 +1,11 @@
-import { Alert } from "react-native";
+import { dialog } from "@/components/ui/AppDialog";
 
-export const confirmDelete = (label: string, onConfirm: () => void) =>
-  Alert.alert("Delete", `Delete "${label}"? This cannot be undone.`, [
-    { text: "Cancel", style: "cancel" },
-    { text: "Delete", style: "destructive", onPress: onConfirm },
-  ]);
+export const confirmDelete = async (label: string, onConfirm: () => void) => {
+  const ok = await dialog.confirm({
+    title: "Delete?",
+    message: `"${label}" will be deleted. This cannot be undone.`,
+    confirmText: "Delete",
+    destructive: true,
+  });
+  if (ok) onConfirm();
+};

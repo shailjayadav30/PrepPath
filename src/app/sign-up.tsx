@@ -7,10 +7,10 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   ScrollView,
 } from "react-native";
+import { toast } from "sonner-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
@@ -29,7 +29,9 @@ export default function SignUp() {
     });
     if (error) {
       console.log("Full signup error object:", JSON.stringify(error, null, 2));
-      Alert.alert("Error in Registering user", JSON.stringify(error));
+      toast.error("Couldn't create your account", {
+        description: error.message ?? "Please try again.",
+      });
       return;
     }
 

@@ -8,7 +8,6 @@ import { authClient } from "@/lib/auth-client";
 import { useCachedValue, writeCache } from "@/lib/cache";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -57,17 +56,14 @@ export default function Spaces() {
   const openSpace = (spaceId: string) =>
     router.push({ pathname: "/(tabs)/(createroadmap)/space/[spaceId]", params: { spaceId } });
 
+  // Errors are shown inside the name dialog
   const createSpace = async (name: string) => {
-    try {
-      const { space } = await apiJson<{ space: Space }>("/spaces", {
-        method: "POST",
-        body: { name },
-      });
-      setCreating(false);
-      openSpace(space.id);
-    } catch (err) {
-      Alert.alert("Couldn't create space", errorMessage(err, "Please try again."));
-    }
+    const { space } = await apiJson<{ space: Space }>("/spaces", {
+      method: "POST",
+      body: { name },
+    });
+    setCreating(false);
+    openSpace(space.id);
   };
 
   const modal = (

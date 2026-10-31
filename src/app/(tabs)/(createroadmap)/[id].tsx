@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -11,6 +10,7 @@ import {
   Text,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Roadmap } from "../../../../types/roadmapTypes";
 import RoadmapView from "@/components/roadmap/RoadmapViw";
@@ -80,7 +80,7 @@ export default function RoadmapDetail() {
       });
     } catch (error) {
       console.error("Failed to delete unit:", error);
-      Alert.alert("Error", "Failed to delete unit. Please try again.");
+      toast.error("Couldn't delete unit", { description: "Please try again." });
     }
   };
 
@@ -118,7 +118,7 @@ export default function RoadmapDetail() {
       });
     } catch (error) {
       console.error("Failed to delete topic:", error);
-      Alert.alert("Error", "Failed to delete topic. Please try again.");
+      toast.error("Couldn't delete topic", { description: "Please try again." });
     }
   };
 
@@ -169,7 +169,7 @@ export default function RoadmapDetail() {
       });
     } catch (error) {
       console.error("Failed to delete subtopic:", error);
-      Alert.alert("Error", "Failed to delete subtopic. Please try again.");
+      toast.error("Couldn't delete subtopic", { description: "Please try again." });
     }
   };
 
@@ -196,7 +196,7 @@ export default function RoadmapDetail() {
     } catch (error) {
       console.error("Failed to update progress:", error);
       setRoadmap(snapshot);
-      Alert.alert("Error", "Couldn't save your progress. Please try again.");
+      toast.error("Couldn't save your progress", { description: "Please try again." });
     }
   };
 

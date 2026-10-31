@@ -6,7 +6,6 @@ import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   LayoutAnimation,
   Platform,
@@ -18,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import { colors } from "@/lib/theme";
 import type {
   AnalyzeResponse,
@@ -142,7 +142,7 @@ export default function CreateRoadmap() {
 
       const asset = result.assets[0];
       if (asset.size && asset.size > MAX_SIZE) {
-        Alert.alert("File too large", "Please choose a PDF smaller than 4.5 MB.");
+        toast.error("File too large", { description: "Please choose a PDF smaller than 4.5 MB." });
         return;
       }
       setFileInfo(asset);
@@ -150,7 +150,7 @@ export default function CreateRoadmap() {
       analyze(asset);
     } catch (e) {
       console.error("Error picking document:", e);
-      Alert.alert("Error", "An error occurred while picking the document.");
+      toast.error("Couldn't open the file", { description: "Please try picking the PDF again." });
     }
   };
 
@@ -258,7 +258,9 @@ export default function CreateRoadmap() {
     if (!analysis) return;
     const name = customName.trim();
     if (!name) {
-      Alert.alert("Subject name needed", "Type the name of the subject you want.");
+      toast.warning("Subject name needed", {
+        description: "Type the name of the subject you want.",
+      });
       return;
     }
     const startPage = toPage(customStart);
@@ -282,10 +284,9 @@ export default function CreateRoadmap() {
     setSelected((prev) => {
       if (prev.includes(index)) return prev.filter((i) => i !== index);
       if (prev.length >= MAX_SUBJECTS) {
-        Alert.alert(
-          "Too many subjects",
-          `You can create up to ${MAX_SUBJECTS} roadmaps at a time.`,
-        );
+        toast.warning("Too many subjects", {
+          description: `You can create up to ${MAX_SUBJECTS} roadmaps at a time.`,
+        });
         return prev;
       }
       return [...prev, index];

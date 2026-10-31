@@ -5,7 +5,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
   StyleSheet,
@@ -14,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 
 const GREEN = "#16A673";
 const GREEN_DARK = "#0F5132";
@@ -59,7 +59,9 @@ export default function SyllabusPdf() {
       const { url } = await apiJson<UploadPdf>(`/syllabus/uploads/${uploadId}/pdf`);
       await Linking.openURL(url);
     } catch (err) {
-      Alert.alert("Couldn't open the PDF", errorMessage(err, "Please try again."));
+      toast.error("Couldn't open the PDF", {
+        description: errorMessage(err, "Please try again."),
+      });
     }
   };
 
