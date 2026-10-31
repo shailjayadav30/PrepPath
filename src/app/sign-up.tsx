@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -19,9 +19,6 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  //   useEffect(() => {
-  //   Alert.alert("Debug", `BASE_URL is: ${process.env.EXPO_PUBLIC_BASE_URL}`);
-  // }, []);
   const handleSignup = async () => {
     const { data, error } = await authClient.signUp.email({
       email,
