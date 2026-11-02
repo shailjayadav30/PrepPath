@@ -98,8 +98,14 @@ export default function StudySessionProvider({ children }: PropsWithChildren) {
     return () => sub.remove();
   }, [refresh]);
 
+  // Set synchronously, unlike `busy` (state updates on the next render), so a second
+  // tap in the same instant is ignored before it sends a request. The server's per-user
+  // lock is what guarantees one timer; this only avoids the extra request.
+  const inFlight = useRef(false);
+
   const act = async (fn: () => Promise<void>, failTitle: string) => {
-    if (busy) return;
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     try {
       await fn();
@@ -107,6 +113,7 @@ export default function StudySessionProvider({ children }: PropsWithChildren) {
       toast.error(failTitle, { description: errorMessage(err, "Please try again.") });
       refresh();
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };
