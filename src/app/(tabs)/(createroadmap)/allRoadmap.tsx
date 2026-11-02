@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { apiJson } from "@/lib/api";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -38,7 +39,7 @@ export default function AllRoadmap() {
       setSpaces(spaceData.spaces ?? []);
       setRoadmaps(listData.roadmap ?? []);
     } catch (err) {
-      console.log("Error", err);
+      logger.error("Error", err);
       setError("Unable to load your roadmaps.");
     } finally {
       setLoading(false);
@@ -57,7 +58,7 @@ export default function AllRoadmap() {
       setRoadmaps((list) => list.filter((r) => r.id !== roadmapId));
       toast.success("Roadmap deleted");
     } catch (err) {
-      console.log("Error in deleting roadmap", err);
+      logger.error("Error in deleting roadmap", err);
       toast.error("Couldn't delete roadmap", { description: "Please try again." });
     }
   }

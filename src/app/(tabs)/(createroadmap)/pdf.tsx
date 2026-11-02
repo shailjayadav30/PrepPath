@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { apiJson, errorMessage } from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
@@ -44,7 +45,7 @@ export default function SyllabusPdf() {
         const data = await apiJson<UploadPdf>(`/syllabus/uploads/${uploadId}/pdf`);
         if (!cancelled) setPdf(data);
       } catch (err) {
-        console.error("Failed to load syllabus PDF:", err);
+        logger.error("Failed to load syllabus PDF:", err);
         if (!cancelled) setError(errorMessage(err, "Couldn't load this PDF."));
       }
     })();

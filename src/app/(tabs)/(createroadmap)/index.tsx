@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { apiJson, errorMessage } from "@/lib/api";
 import { colors, radius, shadow } from "@/lib/theme";
 import NameModal from "@/components/ui/NameModal";
@@ -40,7 +41,7 @@ export default function Spaces() {
       setSpaces(data.spaces ?? []);
       if (cacheKey) writeCache(cacheKey, data.spaces ?? []);
     } catch (err) {
-      console.error("Error loading spaces:", err);
+      logger.error("Error loading spaces:", err);
       setError(errorMessage(err, "Couldn't load your spaces."));
     } finally {
       setRefreshing(false);

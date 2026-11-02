@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -56,7 +57,7 @@ export default function GoogleSignInButton() {
           return;
         }
       }
-      console.error("Google sign-in failed:", err);
+      logger.error("Google sign-in failed:", err);
       toast.error("Couldn't sign in with Google", {
         description: err instanceof Error ? err.message : "Please try again.",
       });

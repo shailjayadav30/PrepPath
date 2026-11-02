@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { authClient } from "@/lib/auth-client";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -45,7 +46,7 @@ export default function RoadmapDetail() {
         const data = await res.json();
         if (!cancelled) setRoadmap(data.roadmap);
       } catch (error) {
-        console.error("Failed to load roadmap:", error);
+        logger.error("Failed to load roadmap:", error);
         if (!cancelled) setError("Couldn't load this roadmap.");
       }
     })();
@@ -79,7 +80,7 @@ export default function RoadmapDetail() {
         };
       });
     } catch (error) {
-      console.error("Failed to delete unit:", error);
+      logger.error("Failed to delete unit:", error);
       toast.error("Couldn't delete unit", { description: "Please try again." });
     }
   };
@@ -117,7 +118,7 @@ export default function RoadmapDetail() {
         };
       });
     } catch (error) {
-      console.error("Failed to delete topic:", error);
+      logger.error("Failed to delete topic:", error);
       toast.error("Couldn't delete topic", { description: "Please try again." });
     }
   };
@@ -168,7 +169,7 @@ export default function RoadmapDetail() {
         };
       });
     } catch (error) {
-      console.error("Failed to delete subtopic:", error);
+      logger.error("Failed to delete subtopic:", error);
       toast.error("Couldn't delete subtopic", { description: "Please try again." });
     }
   };
@@ -194,7 +195,7 @@ export default function RoadmapDetail() {
       }
       refreshSession();
     } catch (error) {
-      console.error("Failed to update progress:", error);
+      logger.error("Failed to update progress:", error);
       setRoadmap(snapshot);
       toast.error("Couldn't save your progress", { description: "Please try again." });
     }

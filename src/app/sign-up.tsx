@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,20 +23,20 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const handleSignup = async () => {
-    const { data, error } = await authClient.signUp.email({
+    // Never log the result: it holds the new user and their session
+    const { error } = await authClient.signUp.email({
       email,
       password,
       name,
     });
     if (error) {
-      console.log("Full signup error object:", JSON.stringify(error, null, 2));
+      logger.warn("Sign-up failed:", error.status, error.message);
       toast.error("Couldn't create your account", {
         description: error.message ?? "Please try again.",
       });
       return;
     }
 
-    console.log("User:", data);
     router.replace("/sign-in");
   };
 

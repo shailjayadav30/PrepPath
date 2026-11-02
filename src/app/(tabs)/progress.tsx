@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { errorMessage } from "@/lib/api";
 import { colors, radius, shadow } from "@/lib/theme";
 import { formatDuration, studyApi } from "@/lib/studySession";
@@ -41,7 +42,7 @@ export default function Progress() {
       setData(next);
       if (cacheKey) writeCache(cacheKey, next);
     } catch (err) {
-      console.error("Error loading progress:", err);
+      logger.error("Error loading progress:", err);
       setError(errorMessage(err, "Couldn't load your progress."));
     } finally {
       setRefreshing(false);

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import {
   createContext,
   PropsWithChildren,
@@ -66,7 +67,7 @@ export default function StudySessionProvider({ children }: PropsWithChildren) {
       const { session } = await studyApi.active();
       apply(session);
     } catch (err) {
-      console.warn("Couldn't load the study session:", err);
+      logger.warn("Couldn't load the study session:", err);
     } finally {
       setLoaded(true);
     }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import AvatarPicker from "@/components/ui/ImagePicker";
 import NameModal from "@/components/ui/NameModal";
 import { apiJson, errorMessage, uploadFile } from "@/lib/api";
@@ -101,7 +102,7 @@ const Settings = () => {
       await refetch();
       toast.success("Profile photo updated");
     } catch (err) {
-      console.error("Error uploading photo:", err);
+      logger.error("Error uploading photo:", err);
       toast.error("Couldn't update photo", {
         description: errorMessage(err, "Please try again."),
       });

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { apiJson, errorMessage } from "@/lib/api";
 import { confirmDelete } from "@/lib/confirm";
 import { colors, radius, shadow } from "@/lib/theme";
@@ -37,7 +38,7 @@ export default function SpaceScreen() {
       const data = await apiJson<{ space: SpaceDetail }>(`/spaces/${spaceId}`);
       setSpace(data.space);
     } catch (err) {
-      console.error("Error loading space:", err);
+      logger.error("Error loading space:", err);
       setError(errorMessage(err, "Couldn't load this space."));
     } finally {
       setRefreshing(false);

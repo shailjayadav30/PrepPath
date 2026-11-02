@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -10,7 +11,7 @@ export default function Onboarding2() {
     try {
       await completeOnboarding();
     } catch (err) {
-      console.error("Error saving onboarding status:", err);
+      logger.error("Error saving onboarding status:", err);
     }
   };
 

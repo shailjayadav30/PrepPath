@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { ApiError, apiJson, errorMessage, uploadPdf } from "@/lib/api";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { Feather } from "@expo/vector-icons";
@@ -118,7 +119,7 @@ export default function CreateRoadmap() {
         animate();
         setPhase("picking");
       } catch (err) {
-        console.error("Error loading space:", err);
+        logger.error("Error loading space:", err);
         if (!cancelled && uploadId) {
           setPhase("idle");
           setError({ message: errorMessage(err, "Couldn't load this PDF."), retry: null });
@@ -149,7 +150,7 @@ export default function CreateRoadmap() {
       setSourceName(null);
       analyze(asset);
     } catch (e) {
-      console.error("Error picking document:", e);
+      logger.error("Error picking document:", e);
       toast.error("Couldn't open the file", { description: "Please try picking the PDF again." });
     }
   };
@@ -177,7 +178,7 @@ export default function CreateRoadmap() {
         setPhase("picking");
       }
     } catch (err) {
-      console.error("Error analyzing syllabus:", err);
+      logger.error("Error analyzing syllabus:", err);
       animate();
       setPhase("idle");
       setError({
@@ -224,7 +225,7 @@ export default function CreateRoadmap() {
       );
       setPhase("done");
     } catch (err) {
-      console.error("Error generating roadmaps:", err);
+      logger.error("Error generating roadmaps:", err);
       animate();
       // The uploaded PDF expired on the server: upload again (its analysis is cached, so it's quick)
       if (err instanceof ApiError && err.status === 410) {

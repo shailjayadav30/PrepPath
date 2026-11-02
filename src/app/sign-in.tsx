@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { useState } from "react";
 import {
   View,
@@ -24,7 +25,8 @@ export default function SignIn() {
 
   const router = useRouter();
   const handleLogin = async () => {
-    const { data, error }=  await authClient.signIn.email({
+    // Never log the result: it holds the user and their session token
+    const { error } = await authClient.signIn.email({
       email,
       password,
     });
@@ -32,12 +34,9 @@ export default function SignIn() {
       toast.error("Couldn't sign in", {
         description: error.message ?? "Please check your email and password.",
       });
-      console.log("Login error:", error);
-      return;
+      logger.warn("Sign-in failed:", error.status, error.message);
     }
-
-    console.log("Logged in user:", data);
-    
+    // On success the session updates and Stack.Protected opens the tabs
   };
 
   return (
