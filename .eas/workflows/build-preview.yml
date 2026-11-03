@@ -1,0 +1,17 @@
+# CD: build an installable Android APK whenever main changes (uses the "preview"
+# profile in eas.json). Can also be started by hand:
+#   eas workflow:run .eas/workflows/build-preview.yml
+name: Build preview APK
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch: {}
+
+jobs:
+  build_android:
+    name: Android preview APK
+    type: build
+    params:
+      platform: android
+      profile: preview

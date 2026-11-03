@@ -175,40 +175,6 @@ export type RecentSession = Omit<StudySession, "topicIds" | "subTopicIds" | "run
   units?: SessionUnit[];
 };
 
-export type RoadmapCheckBoxProps = {
-  onPress: () => void;
-  size?: number;
-  checked: boolean;
-};
-
-export type RoadmapSectionHeaderProps = {
-  title: string;
-  expanded: boolean;
-  onToggleExpand: () => void;
-  onToggleComplete: () => void;
-  completed: boolean;
-  level?: "subject" | "unit" | "topic";
-};
-
-export type SubTopicItemProps = {
-  subTopic: SubTopic;
-  onToggle: () => void;
-};
-
-export type TopicCardProps = {
-  topic: Topic;
-  onToggleTopic: () => void;
-  onToggleSubTopic: (subTopicId: string) => void;
-};
-
-export type UnitCardProps = {
-  unit: Unit;
-  onToggleUnit: () => void;
-  onToggleTopic: (topicId: string) => void;
-  onToggleSubTopic: (topicId: string, subTopicId: string) => void;
-};
-
-
 export const getInitials = (name?: string) =>
   (name ?? "")
     .trim()

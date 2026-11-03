@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import {
   createContext,
   PropsWithChildren,
@@ -7,8 +8,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { Alert, AppState } from "react-native";
+import { AppState } from "react-native";
+import { toast } from "sonner-native";
 import { ApiError, errorMessage } from "@/lib/api";
+import { dialog } from "@/components/ui/AppDialog";
 import { studyApi } from "@/lib/studySession";
 import SessionSummary from "./SessionSummary";
 import { timerNotification } from "../../../modules/study-timer-notification";
@@ -64,7 +67,7 @@ export default function StudySessionProvider({ children }: PropsWithChildren) {
       const { session } = await studyApi.active();
       apply(session);
     } catch (err) {
-      console.warn("Couldn't load the study session:", err);
+      logger.warn("Couldn't load the study session:", err);
     } finally {
       setLoaded(true);
     }
@@ -95,15 +98,22 @@ export default function StudySessionProvider({ children }: PropsWithChildren) {
     return () => sub.remove();
   }, [refresh]);
 
+  // Set synchronously, unlike `busy` (state updates on the next render), so a second
+  // tap in the same instant is ignored before it sends a request. The server's per-user
+  // lock is what guarantees one timer; this only avoids the extra request.
+  const inFlight = useRef(false);
+
   const act = async (fn: () => Promise<void>, failTitle: string) => {
-    if (busy) return;
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     try {
       await fn();
     } catch (err) {
-      Alert.alert(failTitle, errorMessage(err, "Please try again."));
+      toast.error(failTitle, { description: errorMessage(err, "Please try again.") });
       refresh();
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };
@@ -128,15 +138,18 @@ export default function StudySessionProvider({ children }: PropsWithChildren) {
     }, "Couldn't discard the session");
 
   // Started and stopped by accident: nothing to save, so offer to keep going or discard
-  const tooShort = () =>
-    Alert.alert(
-      "Too short to save",
-      "Sessions under 1 minute aren't saved. Keep studying, or discard this one. Anything you ticked stays ticked on the roadmap.",
-      [
-        { text: "Keep studying", style: "cancel" },
-        { text: "Discard", style: "destructive", onPress: discardNow },
-      ],
-    );
+  const tooShort = async () => {
+    const discardIt = await dialog.confirm({
+      title: "Too short to save",
+      message:
+        "Sessions under 1 minute aren't saved. Keep studying, or discard this one. Anything you ticked stays ticked on the roadmap.",
+      icon: "hourglass-outline",
+      cancelText: "Keep studying",
+      confirmText: "Discard",
+      destructive: true,
+    });
+    if (discardIt) discardNow();
+  };
 
   const end = () => {
     if (!session) return;
@@ -160,15 +173,17 @@ export default function StudySessionProvider({ children }: PropsWithChildren) {
     }, "Couldn't end the session");
   };
 
-  const discard = () =>
-    Alert.alert(
-      "Discard session?",
-      "This session's time won't be saved. Anything you ticked stays ticked on the roadmap.",
-      [
-        { text: "Keep studying", style: "cancel" },
-        { text: "Discard", style: "destructive", onPress: discardNow },
-      ],
-    );
+  const discard = async () => {
+    const discardIt = await dialog.confirm({
+      title: "Discard session?",
+      message:
+        "This session's time won't be saved. Anything you ticked stays ticked on the roadmap.",
+      cancelText: "Keep studying",
+      confirmText: "Discard",
+      destructive: true,
+    });
+    if (discardIt) discardNow();
+  };
 
   return (
     <StudySessionContext.Provider

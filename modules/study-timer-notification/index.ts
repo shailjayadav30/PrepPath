@@ -32,7 +32,8 @@ export const timerNotification = {
     try {
       native?.show(title, Math.max(0, Math.floor(elapsedSeconds)), running);
     } catch (err) {
-      console.warn("Couldn't show the study timer notification:", err);
+      // Development only: release builds keep the device log clean
+      if (__DEV__) console.warn("Couldn't show the study timer notification:", err);
     }
   },
 

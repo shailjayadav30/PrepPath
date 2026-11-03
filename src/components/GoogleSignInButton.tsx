@@ -1,11 +1,12 @@
+import { logger } from "@/lib/logger";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
 } from "react-native";
+import { toast } from "sonner-native";
 import { Ionicons } from "@expo/vector-icons";
 import { authClient } from "@/lib/auth-client";
 import { getGoogleSignIn } from "@/lib/google-signin";
@@ -50,18 +51,16 @@ export default function GoogleSignInButton() {
           return;
         }
         if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-          Alert.alert(
-            "Google Play Services needed",
-            "Update or enable Google Play Services to sign in with Google.",
-          );
+          toast.error("Google Play Services needed", {
+            description: "Update or enable Google Play Services to sign in with Google.",
+          });
           return;
         }
       }
-      console.error("Google sign-in failed:", err);
-      Alert.alert(
-        "Couldn't sign in with Google",
-        err instanceof Error ? err.message : "Please try again.",
-      );
+      logger.error("Google sign-in failed:", err);
+      toast.error("Couldn't sign in with Google", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { logger } from "@/lib/logger";
+import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -7,8 +8,10 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
+  KeyboardAvoidingView,
+  ScrollView,
 } from "react-native";
+import { toast } from "sonner-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
@@ -19,28 +22,33 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  //   useEffect(() => {
-  //   Alert.alert("Debug", `BASE_URL is: ${process.env.EXPO_PUBLIC_BASE_URL}`);
-  // }, []);
   const handleSignup = async () => {
-    const { data, error } = await authClient.signUp.email({
+    // Never log the result: it holds the new user and their session
+    const { error } = await authClient.signUp.email({
       email,
       password,
       name,
     });
     if (error) {
-      console.log("Full signup error object:", JSON.stringify(error, null, 2));
-      Alert.alert("Error in Registering user", JSON.stringify(error));
+      logger.warn("Sign-up failed:", error.status, error.message);
+      toast.error("Couldn't create your account", {
+        description: error.message ?? "Please try again.",
+      });
       return;
     }
 
-    console.log("User:", data);
     router.replace("/sign-in");
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      {/* Lift the form above the keyboard; scrolling reaches fields on small screens */}
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoBox}>
@@ -158,7 +166,8 @@ export default function SignUp() {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -168,9 +177,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-  container: {
+  flex: {
     flex: 1,
+  },
+  container: {
+    flexGrow: 1,
     paddingHorizontal: 24,
+    paddingVertical: 24,
     justifyContent: "center",
   },
 

@@ -1,7 +1,10 @@
+import { logger } from "@/lib/logger";
 import { apiJson, errorMessage } from "@/lib/api";
 import { confirmDelete } from "@/lib/confirm";
 import { colors, radius, shadow } from "@/lib/theme";
 import NameModal from "@/components/ui/NameModal";
+import { dialog } from "@/components/ui/AppDialog";
+import { toast } from "sonner-native";
 import ProgressRing from "@/components/ui/ProgressRing";
 import RoadmapCard from "@/components/ui/RoadmapCard";
 import ScreenHeader from "@/components/ui/ScreenHeader";
@@ -10,7 +13,6 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -36,7 +38,7 @@ export default function SpaceScreen() {
       const data = await apiJson<{ space: SpaceDetail }>(`/spaces/${spaceId}`);
       setSpace(data.space);
     } catch (err) {
-      console.error("Error loading space:", err);
+      logger.error("Error loading space:", err);
       setError(errorMessage(err, "Couldn't load this space."));
     } finally {
       setRefreshing(false);
@@ -67,62 +69,63 @@ export default function SpaceScreen() {
       });
     } catch {
       setFollowing(!next);
-      Alert.alert("Couldn't update roadmap", "Please try again.");
+      toast.error("Couldn't update roadmap", { description: "Please try again." });
     }
   };
 
   const deleteRoadmap = async (roadmapId: string) => {
     try {
       await apiJson(`/roadmap/${roadmapId}`, { method: "DELETE" });
+      toast.success("Roadmap deleted");
       // Reload so the PDF's subject list shows the subject as available again
       load();
     } catch {
-      Alert.alert("Couldn't delete roadmap", "Please try again.");
+      toast.error("Couldn't delete roadmap", { description: "Please try again." });
     }
   };
 
+  // Errors are shown inside the name dialog
   const renameSpace = async (name: string) => {
-    try {
-      await apiJson(`/spaces/${spaceId}`, { method: "PATCH", body: { name } });
-      setSpace((prev) => (prev ? { ...prev, name } : prev));
-      setRenaming(false);
-    } catch (err) {
-      Alert.alert("Couldn't rename space", errorMessage(err, "Please try again."));
-    }
+    await apiJson(`/spaces/${spaceId}`, { method: "PATCH", body: { name } });
+    setSpace((prev) => (prev ? { ...prev, name } : prev));
+    setRenaming(false);
   };
 
-  const deleteSpace = () => {
+  const deleteSpace = async () => {
     if (!space) return;
     const count = space.roadmaps.length;
-    Alert.alert(
-      "Delete space",
-      count > 0
-        ? `Delete "${space.name}" and its ${count} roadmap${count === 1 ? "" : "s"}? This cannot be undone.`
-        : `Delete "${space.name}"? This cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await apiJson(`/spaces/${spaceId}`, { method: "DELETE" });
-              router.back();
-            } catch (err) {
-              Alert.alert("Couldn't delete space", errorMessage(err, "Please try again."));
-            }
-          },
-        },
-      ],
-    );
+    const ok = await dialog.confirm({
+      title: "Delete space?",
+      message:
+        count > 0
+          ? `"${space.name}" and its ${count} roadmap${count === 1 ? "" : "s"} will be deleted. This cannot be undone.`
+          : `"${space.name}" will be deleted. This cannot be undone.`,
+      confirmText: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await apiJson(`/spaces/${spaceId}`, { method: "DELETE" });
+      toast.success("Space deleted");
+      router.back();
+    } catch (err) {
+      toast.error("Couldn't delete space", {
+        description: errorMessage(err, "Please try again."),
+      });
+    }
   };
 
-  const openMenu = () =>
-    Alert.alert(space?.name ?? "Space", undefined, [
-      { text: "Rename space", onPress: () => setRenaming(true) },
-      { text: "Delete space", style: "destructive", onPress: deleteSpace },
-      { text: "Cancel", style: "cancel" },
-    ]);
+  const openMenu = async () => {
+    const choice = await dialog.menu({
+      title: space?.name ?? "Space",
+      options: [
+        { key: "rename", label: "Rename space", icon: "create-outline" },
+        { key: "delete", label: "Delete space", icon: "trash-outline", destructive: true },
+      ],
+    });
+    if (choice === "rename") setRenaming(true);
+    else if (choice === "delete") deleteSpace();
+  };
 
   const addRoadmap = (uploadId?: string) =>
     router.push({

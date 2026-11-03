@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { colors, radius } from "@/lib/theme";
+import { errorMessage } from "@/lib/api";
 
 type Props = {
   visible: boolean;
@@ -24,7 +26,8 @@ type Props = {
   onClose: () => void;
 };
 
-// Small dialog asking for a name (Alert.prompt only exists on iOS)
+// Small dialog asking for a name (Alert.prompt only exists on iOS). If onSubmit throws,
+// the error is shown inside the dialog (a toast would be hidden behind the modal).
 export default function NameModal({
   visible,
   title,
@@ -37,12 +40,14 @@ export default function NameModal({
 }: Props) {
   const [value, setValue] = useState(initialValue);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Start from the given value every time it opens
   useEffect(() => {
     if (visible) {
       setValue(initialValue);
       setSaving(false);
+      setError(null);
     }
   }, [visible, initialValue]);
 
@@ -51,8 +56,11 @@ export default function NameModal({
   const submit = async () => {
     if (!name || saving) return;
     setSaving(true);
+    setError(null);
     try {
       await onSubmit(name);
+    } catch (err) {
+      setError(errorMessage(err, "Couldn't save. Please try again."));
     } finally {
       setSaving(false);
     }
@@ -79,6 +87,12 @@ export default function NameModal({
             returnKeyType="done"
             onSubmitEditing={submit}
           />
+          {error ? (
+            <View style={styles.error} accessibilityRole="alert">
+              <Ionicons name="alert-circle" size={16} color={colors.danger} />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
           <View style={styles.actions}>
             <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.7}>
               <Text style={styles.cancelText}>Cancel</Text>
@@ -127,6 +141,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.bg,
   },
+  error: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 10,
+    padding: 10,
+    borderRadius: radius.sm,
+    backgroundColor: colors.dangerTint,
+  },
+  errorText: { flex: 1, fontSize: 13, lineHeight: 18, color: colors.danger },
   actions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 18 },
   cancelBtn: { height: 42, paddingHorizontal: 16, justifyContent: "center" },
   cancelText: { fontSize: 15, fontWeight: "600", color: colors.textSecondary },

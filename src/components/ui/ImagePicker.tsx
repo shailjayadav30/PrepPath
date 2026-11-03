@@ -4,7 +4,6 @@ import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   StyleSheet,
@@ -12,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import { colors } from "@/lib/theme";
 import { getInitials } from "../../../types/roadmapTypes";
 
@@ -60,10 +60,9 @@ export default function AvatarPicker({
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert(
-        "Camera permission needed",
-        "Please allow camera access in your phone settings to take a profile picture.",
-      );
+      toast.error("Camera permission needed", {
+        description: "Please allow camera access in your phone settings to take a profile picture.",
+      });
       return;
     }
     const result = await ImagePicker.launchCameraAsync(options);

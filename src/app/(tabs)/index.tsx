@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { authClient } from "@/lib/auth-client";
 import { colors, radius, shadow } from "@/lib/theme";
 import ProgressRing from "@/components/ui/ProgressRing";
@@ -88,7 +89,7 @@ export default function Index() {
       setHasAnyRoadmap(hasAny);
       saveSnapshot({ roadmaps: following, hasAnyRoadmap: hasAny });
     } catch (err) {
-      console.error("Error fetching roadmaps:", err);
+      logger.error("Error fetching roadmaps:", err);
       // Keep showing cached roadmaps if there are any; only an empty screen gets the error
       if (snapshot.current.roadmaps.length === 0) setError("Couldn't load your roadmaps.");
     } finally {
@@ -106,7 +107,7 @@ export default function Index() {
       setProgress(next);
       saveSnapshot({ progress: next });
     } catch (err) {
-      console.error("Error loading progress:", err);
+      logger.error("Error loading progress:", err);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { ApiError, apiJson, errorMessage, uploadPdf } from "@/lib/api";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { Feather } from "@expo/vector-icons";
@@ -6,7 +7,6 @@ import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   LayoutAnimation,
   Platform,
@@ -18,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import { colors } from "@/lib/theme";
 import type {
   AnalyzeResponse,
@@ -118,7 +119,7 @@ export default function CreateRoadmap() {
         animate();
         setPhase("picking");
       } catch (err) {
-        console.error("Error loading space:", err);
+        logger.error("Error loading space:", err);
         if (!cancelled && uploadId) {
           setPhase("idle");
           setError({ message: errorMessage(err, "Couldn't load this PDF."), retry: null });
@@ -142,15 +143,15 @@ export default function CreateRoadmap() {
 
       const asset = result.assets[0];
       if (asset.size && asset.size > MAX_SIZE) {
-        Alert.alert("File too large", "Please choose a PDF smaller than 4.5 MB.");
+        toast.error("File too large", { description: "Please choose a PDF smaller than 4.5 MB." });
         return;
       }
       setFileInfo(asset);
       setSourceName(null);
       analyze(asset);
     } catch (e) {
-      console.error("Error picking document:", e);
-      Alert.alert("Error", "An error occurred while picking the document.");
+      logger.error("Error picking document:", e);
+      toast.error("Couldn't open the file", { description: "Please try picking the PDF again." });
     }
   };
 
@@ -177,7 +178,7 @@ export default function CreateRoadmap() {
         setPhase("picking");
       }
     } catch (err) {
-      console.error("Error analyzing syllabus:", err);
+      logger.error("Error analyzing syllabus:", err);
       animate();
       setPhase("idle");
       setError({
@@ -224,7 +225,7 @@ export default function CreateRoadmap() {
       );
       setPhase("done");
     } catch (err) {
-      console.error("Error generating roadmaps:", err);
+      logger.error("Error generating roadmaps:", err);
       animate();
       // The uploaded PDF expired on the server: upload again (its analysis is cached, so it's quick)
       if (err instanceof ApiError && err.status === 410) {
@@ -258,7 +259,9 @@ export default function CreateRoadmap() {
     if (!analysis) return;
     const name = customName.trim();
     if (!name) {
-      Alert.alert("Subject name needed", "Type the name of the subject you want.");
+      toast.warning("Subject name needed", {
+        description: "Type the name of the subject you want.",
+      });
       return;
     }
     const startPage = toPage(customStart);
@@ -282,10 +285,9 @@ export default function CreateRoadmap() {
     setSelected((prev) => {
       if (prev.includes(index)) return prev.filter((i) => i !== index);
       if (prev.length >= MAX_SUBJECTS) {
-        Alert.alert(
-          "Too many subjects",
-          `You can create up to ${MAX_SUBJECTS} roadmaps at a time.`,
-        );
+        toast.warning("Too many subjects", {
+          description: `You can create up to ${MAX_SUBJECTS} roadmaps at a time.`,
+        });
         return prev;
       }
       return [...prev, index];

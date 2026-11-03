@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import AvatarPicker from "@/components/ui/ImagePicker";
 import NameModal from "@/components/ui/NameModal";
 import { apiJson, errorMessage, uploadFile } from "@/lib/api";
@@ -8,7 +9,6 @@ import { signOutOfGoogle } from "@/lib/google-signin";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,6 +16,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
+import { dialog } from "@/components/ui/AppDialog";
 import { colors } from "@/lib/theme";
 
 const GREEN = "#16A673";
@@ -84,7 +86,7 @@ const Settings = () => {
 
   const uploadPhoto = async (asset: ImagePickerAsset) => {
     if (asset.fileSize && asset.fileSize > MAX_PHOTO_BYTES) {
-      Alert.alert("Photo too large", "Please choose a photo smaller than 4 MB.");
+      toast.error("Photo too large", { description: "Please choose a photo smaller than 4 MB." });
       return;
     }
     setPreview(asset.uri);
@@ -98,60 +100,64 @@ const Settings = () => {
       });
       // The session holds the user's image; reload it so every screen updates
       await refetch();
+      toast.success("Profile photo updated");
     } catch (err) {
-      console.error("Error uploading photo:", err);
-      Alert.alert("Couldn't update photo", errorMessage(err, "Please try again."));
+      logger.error("Error uploading photo:", err);
+      toast.error("Couldn't update photo", {
+        description: errorMessage(err, "Please try again."),
+      });
     } finally {
       setPreview(null);
       setPhotoBusy(false);
     }
   };
 
-  const removePhoto = () =>
-    Alert.alert("Remove photo", "Remove your profile photo?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: async () => {
-          setPhotoBusy(true);
-          try {
-            await apiJson("/profile/avatar", { method: "DELETE" });
-            await refetch();
-          } catch (err) {
-            Alert.alert("Couldn't remove photo", errorMessage(err, "Please try again."));
-          } finally {
-            setPhotoBusy(false);
-          }
-        },
-      },
-    ]);
-
-  const saveName = async (name: string) => {
+  const removePhoto = async () => {
+    const ok = await dialog.confirm({
+      title: "Remove photo?",
+      message: "Your initials will be shown instead.",
+      icon: "person-remove-outline",
+      confirmText: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
+    setPhotoBusy(true);
     try {
-      await apiJson("/profile", { method: "PATCH", body: { name } });
+      await apiJson("/profile/avatar", { method: "DELETE" });
       await refetch();
-      setEditingName(false);
+      toast.success("Profile photo removed");
     } catch (err) {
-      Alert.alert("Couldn't update name", errorMessage(err, "Please try again."));
+      toast.error("Couldn't remove photo", {
+        description: errorMessage(err, "Please try again."),
+      });
+    } finally {
+      setPhotoBusy(false);
     }
   };
-  const handleSignOut = () => {
-    Alert.alert("Sign out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign out",
-        style: "destructive",
-        onPress: async () => {
-          await signOutOfGoogle();
-          await authClient.signOut();
-        },
-      },
-    ]);
+
+  // Errors are shown inside the name dialog
+  const saveName = async (name: string) => {
+    await apiJson("/profile", { method: "PATCH", body: { name } });
+    await refetch();
+    setEditingName(false);
+    toast.success("Name updated");
+  };
+
+  const handleSignOut = async () => {
+    const ok = await dialog.confirm({
+      title: "Sign out?",
+      message: "You can sign back in any time.",
+      icon: "log-out-outline",
+      confirmText: "Sign out",
+      destructive: true,
+    });
+    if (!ok) return;
+    await signOutOfGoogle();
+    await authClient.signOut();
   };
 
   const soon = (what: string) => () =>
-    Alert.alert(what, "This screen is coming soon.");
+    toast.info(what, { description: "This screen is coming soon." });
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>

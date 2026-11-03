@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { useState } from "react";
 import {
   View,
@@ -5,8 +6,10 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
+  KeyboardAvoidingView,
+  ScrollView,
 } from "react-native";
+import { toast } from "sonner-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
@@ -22,23 +25,29 @@ export default function SignIn() {
 
   const router = useRouter();
   const handleLogin = async () => {
-    const { data, error }=  await authClient.signIn.email({
+    // Never log the result: it holds the user and their session token
+    const { error } = await authClient.signIn.email({
       email,
       password,
     });
     if (error) {
-      Alert.alert("Error in loogging in",`${error.message}`)
-      console.log("Login error:", error);
-      return;
+      toast.error("Couldn't sign in", {
+        description: error.message ?? "Please check your email and password.",
+      });
+      logger.warn("Sign-in failed:", error.status, error.message);
     }
-
-    console.log("Logged in user:", data);
-    
+    // On success the session updates and Stack.Protected opens the tabs
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      {/* Lift the form above the keyboard; scrolling reaches fields on small screens */}
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoBox}>
@@ -137,7 +146,8 @@ export default function SignIn() {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -147,9 +157,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-  container: {
+  flex: {
     flex: 1,
+  },
+  container: {
+    flexGrow: 1,
     paddingHorizontal: 24,
+    paddingVertical: 24,
     justifyContent: "center",
   },
 
